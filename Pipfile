@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pytest-cov = "*"
+
+[dev-packages]
+ipython = "*"
+pytest = "*"
+pytest-runner = "*"
+pytest-cov = "*"
+sphinx = "*"
+setuptools-scm = "*"
+
+[requires]
+python_version = "3.6"
