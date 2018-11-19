@@ -13,7 +13,7 @@ ENV \
   PIPENV_COLORBLIND=true \
   PIPENV_NOSPIN=true \
   PYTHONPATH="/app:${PYTHONPATH}"
-RUN pip3 install pipenv
+RUN pip3 install pipenv==2018.5.18 pip==18.0
 
 WORKDIR /build
 COPY Pipfile .
