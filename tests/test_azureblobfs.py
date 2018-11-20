@@ -3,23 +3,26 @@
 
 """Tests for `azureblobfs` package."""
 
-import pytest
-
-
+import unittest
 import azureblobfs
 
+import dask.bytes.core
 
-@pytest.fixture
-def response():
-    """Sample pytest fixture.
+class SplitContainerBlobTest(unittest.TestCase):
 
-    See more at: http://doc.pytest.org/en/latest/fixture.html
-    """
-    # import requests
-    # return requests.get('https://github.com/audreyr/cookiecutter-pypackage')
+    def test_simple_scenario_success(self):
+        container, blob = azureblobfs.DaskAzureBlobFileSystem.split_container_blob("azureblobfs/blob_name")
+        self.assertEqual(container, "azureblobfs")
+        self.assertEqual(blob, "blob_name")
 
+    def test_subfolder_scenario_success(self):
+        container, blob = azureblobfs.DaskAzureBlobFileSystem.split_container_blob("azureblobfs/subfolder/blob_name")
+        self.assertEqual(container, "azureblobfs")
+        self.assertEqual(blob, "subfolder/blob_name")
 
-def test_content(response):
-    """Sample pytest test function with the pytest fixture as an argument."""
-    # from bs4 import BeautifulSoup
-    # assert 'GitHub' in BeautifulSoup(response.content).title.string
+    def test_no_blob_failure(self):
+        with self.assertRaises(Exception) as context:
+            azureblobfs.DaskAzureBlobFileSystem.split_container_blob("azureblobfs")
+
+    def test_is_registered(self):
+        self.assertIn(azureblobfs.core.ab_protocol, dask.bytes.core._filesystems)
