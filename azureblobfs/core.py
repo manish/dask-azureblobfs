@@ -28,40 +28,43 @@ import fnmatch
 from azure.storage.blob.blockblobservice import BlockBlobService
 
 import dask.bytes.core
+from dask.bytes.local import LocalFileSystem
 
 ab_protocol = "abfs"
 
-class DaskAzureBlobFileSystem(BlockBlobService):
-    def __init__(self, account_name=None, account_key=None, sas_token=None, **kwargs):
+class DaskAzureBlobFileSystem(LocalFileSystem):
+    def __init__(self, account_name=None, account_key=None, sas_token=None, **storage_options):
+        super(LocalFileSystem, self).__init__(storage_options)
+
         account_name = account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
         account_key = account_key or os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
         sas_token = sas_token or os.environ.get("AZURE_BLOB_SAS_TOKEN")
-        super(BlockBlobService, self).__init__(account_name=account_name,
+        self.connection = BlockBlobService(account_name=account_name,
                                                account_key=account_key,
                                                sas_token=sas_token,
-                                               protocol=kwargs.get("protocol"),
-                                               endpoint_suffix=kwargs.get("endpoint_suffix"),
-                                               custom_domain=kwargs.get("custom_domain"))
+                                               protocol=storage_options.get("protocol"),
+                                               endpoint_suffix=storage_options.get("endpoint_suffix"),
+                                               custom_domain=storage_options.get("custom_domain"))
 
     def glob(self, path):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
-        return filter(lambda x: fnmatch.fnmatch(x.name, blob_pattern), self.list_blobs(container))
+        return filter(lambda x: fnmatch.fnmatch(x.name, blob_pattern), self.connection.list_blobs(container))
 
     def mkdirs(self, path, **kwargs):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
-        if not self.exists(container):
-            self.create_container(container, kwargs)
+        if not self.connection.exists(container):
+            self.connection.create_container(container, kwargs)
 
     def open(self, path, mode='rb', **kwargs):
         pass
 
     def size(self, path):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
-        return self.get_blob_properties(container, blob_pattern).properties.content_length
+        return self.connection.get_blob_properties(container, blob_pattern).properties.content_length
 
     def ukey(self, path):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
-        return self.get_blob_properties(container, blob_pattern).properties.etag
+        return self.connection.get_blob_properties(container, blob_pattern).properties.etag
 
     @classmethod
     def split_container_blob(self, path):
