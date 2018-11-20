@@ -33,18 +33,20 @@ from dask.bytes.local import LocalFileSystem
 ab_protocol = "abfs"
 
 class DaskAzureBlobFileSystem(LocalFileSystem):
-    def __init__(self, account_name=None, account_key=None, sas_token=None, **storage_options):
-        super(LocalFileSystem, self).__init__(storage_options)
+    def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
+        super(LocalFileSystem, self).__init__()
 
         account_name = account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
         account_key = account_key or os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
         sas_token = sas_token or os.environ.get("AZURE_BLOB_SAS_TOKEN")
+        connection_string = connection_string or os.environ.get("AZURE_BLOB_CONNECTION_STRING")
         self.connection = BlockBlobService(account_name=account_name,
-                                               account_key=account_key,
-                                               sas_token=sas_token,
-                                               protocol=storage_options.get("protocol"),
-                                               endpoint_suffix=storage_options.get("endpoint_suffix"),
-                                               custom_domain=storage_options.get("custom_domain"))
+                                           account_key=account_key,
+                                           sas_token=sas_token,
+                                           connection_string=connection_string,
+                                           protocol=storage_options.get("protocol"),
+                                           endpoint_suffix=storage_options.get("endpoint_suffix"),
+                                           custom_domain=storage_options.get("custom_domain"))
 
     def glob(self, path):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
