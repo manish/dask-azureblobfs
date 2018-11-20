@@ -8,6 +8,8 @@ import azureblobfs
 
 import dask.bytes.core
 
+from azureblobfs import DaskAzureBlobFileSystem
+
 class SplitContainerBlobTest(unittest.TestCase):
 
     def test_simple_scenario_success(self):
@@ -26,3 +28,13 @@ class SplitContainerBlobTest(unittest.TestCase):
 
     def test_is_registered(self):
         self.assertIn(azureblobfs.core.ab_protocol, dask.bytes.core._filesystems)
+
+class DaskAzureBlobFileSystemTest(unittest.TestCase):
+
+    account_name="e29"
+    container_name = "abfs-methods"
+    def test_glob(self):
+        fs = DaskAzureBlobFileSystem(account_name=self.account_name)
+        all_files = [file.name for file in fs.glob("{container_name}/*.csv".format(container_name=self.container_name))]
+        self.assertIn("Local_Weather_Data.csv", all_files)
+        self.assertIn("rdu-weather-history.csv", all_files)
