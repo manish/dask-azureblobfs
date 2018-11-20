@@ -1,6 +1,11 @@
 version: '3'
 services:
   app:
+    environment:
+      - AZURE_BLOB_ACCOUNT_NAME=${AZURE_BLOB_ACCOUNT_NAME}
+      - AZURE_BLOB_ACCOUNT_KEY=${AZURE_BLOB_ACCOUNT_KEY}
+      - AZURE_BLOB_SAS_TOKEN=${AZURE_BLOB_SAS_TOKEN}
+      - AZURE_BLOB_CONNECTION_STRING=${AZURE_BLOB_CONNECTION_STRING}
     build:
       context: .
       args:
