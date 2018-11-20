@@ -27,7 +27,7 @@ class SplitContainerBlobTest(unittest.TestCase):
             azureblobfs.DaskAzureBlobFileSystem.split_container_blob("azureblobfs")
 
     def test_is_registered(self):
-        self.assertIn(azureblobfs.core.ab_protocol, dask.bytes.core._filesystems)
+        self.assertIn(DaskAzureBlobFileSystem.protocol, dask.bytes.core._filesystems)
 
 class DaskAzureBlobFileSystemTest(unittest.TestCase):
 

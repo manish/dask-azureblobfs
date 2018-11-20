@@ -30,11 +30,10 @@ from azure.storage.blob.blockblobservice import BlockBlobService
 import dask.bytes.core
 from dask.bytes.local import LocalFileSystem
 
-ab_protocol = "abfs"
-
 class DaskAzureBlobFileSystem(LocalFileSystem):
+    protocol="abfs"
     def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
-        super(LocalFileSystem, self).__init__()
+        super(DaskAzureBlobFileSystem, self).__init__()
 
         account_name = account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
         account_key = account_key or os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
@@ -72,7 +71,7 @@ class DaskAzureBlobFileSystem(LocalFileSystem):
     def split_container_blob(self, path):
         index_sep = path.find("/")
         if index_sep < 0:
-            raise Exception("The path provided is not in the format {protocol}://container/blob_pattern".format(protocol=ab_protocol))
+            raise Exception("The path provided is not in the format {protocol}://container/blob_pattern".format(protocol=protocol))
         return path[:index_sep], path[index_sep+1:]
 
-dask.bytes.core._filesystems[ab_protocol] = DaskAzureBlobFileSystem
+dask.bytes.core._filesystems[DaskAzureBlobFileSystem.protocol] = DaskAzureBlobFileSystem
