@@ -9,22 +9,30 @@ import azureblobfs
 import dask.bytes.core
 
 from azureblobfs import DaskAzureBlobFileSystem
+from azureblobfs.utils import generate_guid
 
 class SplitContainerBlobTest(unittest.TestCase):
 
+    def setUp(self):
+        self.container = generate_guid()
+        self.subfolder = generate_guid(5)
+        self.blob_name = generate_guid(10)
+
     def test_simple_scenario_success(self):
-        container, blob = azureblobfs.DaskAzureBlobFileSystem.split_container_blob("azureblobfs/blob_name")
-        self.assertEqual(container, "azureblobfs")
-        self.assertEqual(blob, "blob_name")
+        container, blob = azureblobfs.DaskAzureBlobFileSystem.split_container_blob("{container}/{blob_name}".format(
+            container=self.container, blob_name=self.blob_name))
+        self.assertEqual(container, self.container)
+        self.assertEqual(blob, self.blob_name)
 
     def test_subfolder_scenario_success(self):
-        container, blob = azureblobfs.DaskAzureBlobFileSystem.split_container_blob("azureblobfs/subfolder/blob_name")
-        self.assertEqual(container, "azureblobfs")
-        self.assertEqual(blob, "subfolder/blob_name")
+        container, blob = azureblobfs.DaskAzureBlobFileSystem.split_container_blob("{container}/{subfolder}/{blob_name}".format(
+            container=self.container, subfolder=self.subfolder, blob_name=self.blob_name))
+        self.assertEqual(container, self.container)
+        self.assertEqual(blob, "{subfolder}/{blob_name}".format(subfolder=self.subfolder, blob_name=self.blob_name))
 
     def test_no_blob_failure(self):
         with self.assertRaises(Exception) as context:
-            azureblobfs.DaskAzureBlobFileSystem.split_container_blob("azureblobfs")
+            azureblobfs.DaskAzureBlobFileSystem.split_container_blob(self.container)
 
     def test_is_registered(self):
         self.assertIn(DaskAzureBlobFileSystem.protocol, dask.bytes.core._filesystems)
