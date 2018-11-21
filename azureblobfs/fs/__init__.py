@@ -67,10 +67,6 @@ class AzureBlobFileSystem(object):
         else:
             return set(filter(lambda x: fnmatch.fnmatch(x, pattern), subpath))
 
-    def _ls_subfolder(self, blobs):
-        subpath = map(lambda blob: blob.replace(self.cwd, ""), [item.name for item in blobs])
-        return map(lambda blob: blob[1:] if blob.startswith(self.sep) else blob, subpath)
-
     def mkdir(self, dir_name):
         pass
 
@@ -119,9 +115,6 @@ class AzureBlobFileSystem(object):
     def pwd(self):
         return self.cwd
 
-    def df(self):
-        pass
-
     def du(self):
         pass
 
@@ -130,6 +123,10 @@ class AzureBlobFileSystem(object):
 
     def tail(self, path, bytes_count):
         pass
+
+    def _ls_subfolder(self, blobs):
+        subpath = map(lambda blob: blob.replace(self.cwd, ""), [item.name for item in blobs])
+        return map(lambda blob: blob[1:] if blob.startswith(self.sep) else blob, subpath)
 
     def _create_full_path(self, file):
         return file if self.cwd == "" else "{cwd}{sep}{path}".format(cwd=self.cwd, sep=self.sep, path=file)
