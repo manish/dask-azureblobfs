@@ -89,8 +89,6 @@ class AzureBlobFileSystem(object):
     def tail(self, bytes_count=None):
         pass
 
-
-
 class AzureBlobMap(object):
     def __init__(self, location, fs):
         self.location = location

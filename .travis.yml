@@ -13,8 +13,8 @@ install: docker-compose build
 # Command to run tests, e.g. python setup.py test
 jobs:
   include:
-    - stage: test
+    - stage: test-DaskAzureBlobFileSystemTest
       # Command to run tests, e.g. python setup.py test
-      script: ./drun_app <SCRIPT>
+      script: ./drun_app python -m unittest -v tests.test_azureblobfs
 
 
