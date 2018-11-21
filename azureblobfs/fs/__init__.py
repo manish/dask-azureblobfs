@@ -23,6 +23,9 @@
 # THE SOFTWARE.
 
 import io
+import fnmatch
+
+from azure.storage.blob.blockblobservice import BlockBlobService
 
 class AzureBlobFile(object):
     def __init__(self, **kwargs):
@@ -47,14 +50,25 @@ class AzureBlobFile(object):
         return False
 
 class AzureBlobFileSystem(object):
-    def __init__(self, service, container, **kwargs):
+    def __init__(self, container, service, **kwargs):
+        if not isinstance(service, BlockBlobService):
+            raise TypeError("service needs to be of type azure.storage.blob.blockblobservice.BlockBlobService")
         self.service = service
         self.kwargs = kwargs
         self.container = container
         self.cwd = ""
+        self.sep = "/"
 
-    def ls(self, pattern):
-        pass
+    def ls(self, pattern=None):
+        subpath = self._ls_subfolder(self.service.list_blobs(self.container))
+        if not pattern:
+            return set(map(lambda x: x[:x.find("/")+1] if x.find("/") >=0 else x, subpath))
+        else:
+            return set(filter(lambda x: fnmatch.fnmatch(x, pattern), subpath))
+
+    def _ls_subfolder(self, blobs):
+        subpath = map(lambda blob: blob.replace(self.cwd, ""), [item.name for item in blobs])
+        return map(lambda blob: blob[1:] if blob.startswith(self.sep) else blob, subpath)
 
     def mkdir(self, dir_name):
         pass
@@ -75,7 +89,7 @@ class AzureBlobFileSystem(object):
         pass
 
     def pwd(self):
-        pass
+        return self.cwd
 
     def df(self):
         pass
