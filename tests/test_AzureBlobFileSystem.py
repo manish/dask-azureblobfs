@@ -51,3 +51,11 @@ class SplitContainerBlobTest(unittest.TestCase):
             self.fs.cd()
             self.assertEqual(self.fs.pwd(), "")
             self.fs.cd("undefined_folder")
+
+    def test_touch_rm(self):
+        self.fs.cd()
+        file_name = "test_touch_rm/{file_name}.txt".format(file_name=generate_guid())
+        with self.assertRaises(IOError) as context:
+            self.fs.rm(file_name)
+        self.assertEqual(self.fs.touch(file_name), file_name)
+        self.fs.rm(file_name)

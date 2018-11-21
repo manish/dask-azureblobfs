@@ -23,6 +23,7 @@
 # THE SOFTWARE.
 
 import io
+import os
 import fnmatch
 
 from azure.storage.blob.blockblobservice import BlockBlobService
@@ -81,8 +82,30 @@ class AzureBlobFileSystem(object):
         else:
             raise IOError("Directory '{dir_name}' does not exist under '{cwd}{sep}'".format(dir_name=dir_name, cwd=self.cwd, sep=self.sep))
 
-    def rm(self, path):
-        pass
+    def rm(self, file):
+        full_path = self._create_full_path(file)
+        if self.service.exists(self.container,full_path):
+            path_delete_lease = None
+            try:
+                self.service.acquire_blob_lease(self.container, full_path)
+                self.service.delete_blob(self.container, full_path)
+            except:
+                if path_delete_lease is not None:
+                    self.service.release_blob_lease(self.container, full_path, path_delete_lease)
+        else:
+            raise IOError(
+                "File '{file}' does not exist under '{cwd}{sep}'".format(file=file, cwd=self.cwd, sep=self.sep))
+
+    def touch(self, file):
+        full_path = self._create_full_path(file)
+        container_lease = None
+        try:
+            container_lease = self.service.acquire_container_lease(self.container)
+            self.service.create_blob_from_text(self.container, full_path, "")
+        finally:
+            if container_lease is not None:
+                self.service.release_container_lease(self.container, container_lease)
+        return full_path
 
     def rmdir(self, path):
         pass
@@ -102,11 +125,14 @@ class AzureBlobFileSystem(object):
     def du(self):
         pass
 
-    def head(self, bytes_count=None):
+    def head(self, path, bytes_count):
         pass
 
-    def tail(self, bytes_count=None):
+    def tail(self, path, bytes_count):
         pass
+
+    def _create_full_path(self, file):
+        return file if self.cwd == "" else "{cwd}{sep}{path}".format(cwd=self.cwd, sep=self.sep, path=file)
 
 class AzureBlobMap(object):
     def __init__(self, location, fs):
