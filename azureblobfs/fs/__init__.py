@@ -74,7 +74,12 @@ class AzureBlobFileSystem(object):
         pass
 
     def cd(self, dir_name=None):
-        pass
+        if dir_name == None:
+            self.cwd = ""
+        elif "{dir_name}{sep}".format(dir_name=dir_name, sep=self.sep) in self.ls():
+            self.cwd = dir_name if self.cwd == "" else "{cwd}{sep}{dir_name}".format(cwd = self.cwd, sep=self.sep, dir_name=dir_name)
+        else:
+            raise IOError("Directory '{dir_name}' does not exist under '{cwd}{sep}'".format(dir_name=dir_name, cwd=self.cwd, sep=self.sep))
 
     def rm(self, path):
         pass

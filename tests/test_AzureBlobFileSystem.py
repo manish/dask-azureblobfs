@@ -34,3 +34,20 @@ class SplitContainerBlobTest(unittest.TestCase):
         folder_list = self.fs.ls("artifacts*")
         self.assertIn("artifacts/samples/artifacts (2).json", folder_list)
         self.assertIn("artifacts/samples/artifacts (3).json", folder_list)
+
+    def test_cd_pwd(self):
+        self.fs.cd()
+        self.assertEqual(self.fs.pwd(), "")
+        self.fs.cd("artifacts")
+        self.assertEqual(self.fs.pwd(), "artifacts")
+        self.fs.cd()
+        self.assertEqual(self.fs.pwd(), "")
+        self.fs.cd("artifacts")
+        self.fs.cd("samples")
+        self.assertEqual(self.fs.pwd(), "artifacts/samples")
+
+    def test_cd_fails(self):
+        with self.assertRaises(IOError) as context:
+            self.fs.cd()
+            self.assertEqual(self.fs.pwd(), "")
+            self.fs.cd("undefined_folder")
