@@ -59,3 +59,9 @@ class SplitContainerBlobTest(unittest.TestCase):
             self.fs.rm(file_name)
         self.assertEqual(self.fs.touch(file_name), file_name)
         self.fs.rm(file_name)
+
+    def test_du(self):
+        self.fs.cd()
+        du_results = self.fs.du()
+        self.assertIn(('weathers/rdu-weather-history.csv', 480078), du_results.items())
+        self.assertIn(('weathers/Local_Weather_Data.csv', 7580289), du_results.items())

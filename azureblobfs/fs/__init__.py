@@ -116,7 +116,8 @@ class AzureBlobFileSystem(object):
         return self.cwd
 
     def du(self):
-        pass
+        return { blob.name : blob.properties.content_length
+                 for blob in self.service.list_blobs(self.container) }
 
     def head(self, path, bytes_count):
         pass
