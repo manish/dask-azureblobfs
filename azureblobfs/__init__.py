@@ -18,4 +18,4 @@ except DistributionNotFound:
         os.path.dirname(os.path.dirname(__file__))
     )
 
-from .core import DaskAzureBlobFileSystem
+from .dask import DaskAzureBlobFileSystem
