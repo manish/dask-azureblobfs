@@ -78,13 +78,13 @@ class AzureBlobFileSystem(object):
         else:
             raise IOError("Directory '{dir_name}' does not exist under '{cwd}{sep}'".format(dir_name=dir_name, cwd=self.cwd, sep=self.sep))
 
-    def rm(self, file):
-        full_path = self._create_full_path(file)
-        if self.service.exists(self.container,full_path):
+    def rm(self, file_name):
+        full_path = self._create_full_path(file_name)
+        if self.service.exists(self.container, full_path):
             path_delete_lease = None
             try:
-                self.service.acquire_blob_lease(self.container, full_path)
-                self.service.delete_blob(self.container, full_path)
+                path_delete_lease = self.service.acquire_blob_lease(self.container, full_path)
+                self.service.delete_blob(self.container, full_path, lease_id=path_delete_lease)
             except:
                 if path_delete_lease is not None:
                     self.service.release_blob_lease(self.container, full_path, path_delete_lease)
