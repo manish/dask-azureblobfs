@@ -5,6 +5,7 @@
 
 import unittest
 import azureblobfs
+import warnings
 
 import dask.bytes.core
 
@@ -17,6 +18,7 @@ class SplitContainerBlobTest(unittest.TestCase):
         self.container = generate_guid()
         self.subfolder = generate_guid(5)
         self.blob_name = generate_guid(10)
+        warnings.simplefilter("ignore", ResourceWarning)
 
     def test_simple_scenario_success(self):
         container, blob = azureblobfs.DaskAzureBlobFileSystem.split_container_blob("{container}/{blob_name}".format(
@@ -45,6 +47,7 @@ class DaskAzureBlobFileSystemTest(unittest.TestCase):
               "rdu-weather-history.csv": {"size": 480078, "ukey": "\"0x8D64E894B716BBD\""}}
     def setUp(self):
         self.fs = DaskAzureBlobFileSystem(account_name=self.account_name)
+        warnings.simplefilter("ignore", ResourceWarning)
 
     def test_glob(self):
         all_files = [file.name for file in self.fs.glob("{container_name}/*.csv".format(container_name=self.container_name))]

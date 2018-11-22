@@ -23,6 +23,10 @@
 # THE SOFTWARE.
 
 import io
+import os
+import fnmatch
+
+from azure.storage.blob.blockblobservice import BlockBlobService
 
 class AzureBlobFile(object):
     def __init__(self, **kwargs):
@@ -47,47 +51,101 @@ class AzureBlobFile(object):
         return False
 
 class AzureBlobFileSystem(object):
-    def __init__(self, service, container, **kwargs):
+    def __init__(self, container, service, **kwargs):
+        if not isinstance(service, BlockBlobService):
+            raise TypeError("service needs to be of type azure.storage.blob.blockblobservice.BlockBlobService")
         self.service = service
         self.kwargs = kwargs
         self.container = container
         self.cwd = ""
+        self.sep = "/"
 
-    def ls(self, pattern):
-        pass
+    def ls(self, pattern=None):
+        subpath = self._ls_subfolder(self.service.list_blobs(self.container))
+        if not pattern:
+            return set(map(lambda x: x[:x.find("/")+1] if x.find("/") >=0 else x, subpath))
+        else:
+            return set(filter(lambda x: fnmatch.fnmatch(x, pattern), subpath))
 
     def mkdir(self, dir_name):
-        pass
+        self.touch("{dir_name}/".format(dir_name=dir_name))
 
     def cd(self, dir_name=None):
-        pass
+        if dir_name == None:
+            self.cwd = ""
+        elif "{dir_name}{sep}".format(dir_name=dir_name, sep=self.sep) in self.ls():
+            self.cwd = dir_name if self.cwd == "" else "{cwd}{sep}{dir_name}".format(cwd = self.cwd, sep=self.sep, dir_name=dir_name)
+        else:
+            raise IOError("Directory '{dir_name}' does not exist under '{cwd}{sep}'".format(dir_name=dir_name, cwd=self.cwd, sep=self.sep))
 
-    def rm(self, path):
-        pass
+    def rm(self, file_name):
+        full_path = self._create_full_path(file_name)
+        if self.service.exists(self.container, full_path):
+            path_delete_lease = None
+            try:
+                path_delete_lease = self.service.acquire_blob_lease(self.container, full_path)
+                self.service.delete_blob(self.container, full_path, lease_id=path_delete_lease)
+            except:
+                if path_delete_lease is not None:
+                    self.service.release_blob_lease(self.container, full_path, path_delete_lease)
+        else:
+            raise IOError(
+                "File '{file}' does not exist under '{cwd}{sep}'".format(file=file, cwd=self.cwd, sep=self.sep))
 
-    def rmdir(self, path):
-        pass
+    def touch(self, file_name):
+        full_path = self._create_full_path(file_name)
+        container_lease = None
+        try:
+            container_lease = self.service.acquire_container_lease(self.container)
+            self.service.create_blob_from_text(self.container, full_path, "")
+        finally:
+            if container_lease is not None:
+                self.service.release_container_lease(self.container, container_lease)
+        return full_path
 
     def mv(self, src_path, dst_path):
-        pass
+        try:
+            self.cp(src_path, dst_path)
+            self.rm(src_path)
+            return True
+        except:
+            self.rm(dst_path)
+            return False
 
     def cp(self, src_path, dst_path):
-        pass
+        copy_container_lease = None
+        full_src_path = self._create_full_path(src_path)
+        full_dst_path = self._create_full_path(dst_path)
+        try:
+            copy_container_lease = self.service.acquire_container_lease(self.container)
+            self.service.copy_blob(self.container, full_dst_path, self.service.make_blob_url(self.container, full_src_path))
+        finally:
+            if copy_container_lease is not None:
+                self.service.release_container_lease(self.container, copy_container_lease)
 
     def pwd(self):
-        pass
-
-    def df(self):
-        pass
+        return self.cwd
 
     def du(self):
-        pass
+        return { blob.name : blob.properties.content_length
+                 for blob in self.service.list_blobs(self.container) }
 
-    def head(self, bytes_count=None):
-        pass
+    def head(self, path, bytes_count):
+        return self.service.get_blob_to_bytes(self.container, self._create_full_path(path), start_range=0,
+                                              end_range=bytes_count-1).content
 
-    def tail(self, bytes_count=None):
-        pass
+    def tail(self, path, bytes_count):
+        full_path = self._create_full_path(path)
+        size = self.service.get_blob_properties(self.container, full_path).properties.content_length
+        return self.service.get_blob_to_bytes(self.container, full_path, start_range=size-bytes_count,
+                                              end_range=size-1).content
+
+    def _ls_subfolder(self, blobs):
+        subpath = map(lambda blob: blob.replace(self.cwd, ""), [item.name for item in blobs])
+        return map(lambda blob: blob[1:] if blob.startswith(self.sep) else blob, subpath)
+
+    def _create_full_path(self, file_name):
+        return file_name if self.cwd == "" else "{cwd}{sep}{path}".format(cwd=self.cwd, sep=self.sep, path=file_name)
 
 class AzureBlobMap(object):
     def __init__(self, location, fs):

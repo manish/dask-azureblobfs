@@ -71,7 +71,8 @@ class DaskAzureBlobFileSystem(LocalFileSystem):
     def split_container_blob(self, path):
         index_sep = path.find("/")
         if index_sep < 0:
-            raise Exception("The path provided is not in the format {protocol}://container/blob_pattern".format(protocol=protocol))
+            raise Exception("The path provided is not in the format {protocol}://container/blob_pattern".format(
+                protocol=DaskAzureBlobFileSystem.protocol))
         return path[:index_sep], path[index_sep+1:]
 
 dask.bytes.core._filesystems[DaskAzureBlobFileSystem.protocol] = DaskAzureBlobFileSystem
