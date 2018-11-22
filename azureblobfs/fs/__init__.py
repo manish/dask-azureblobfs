@@ -133,8 +133,8 @@ class AzureBlobFileSystem(object):
         subpath = map(lambda blob: blob.replace(self.cwd, ""), [item.name for item in blobs])
         return map(lambda blob: blob[1:] if blob.startswith(self.sep) else blob, subpath)
 
-    def _create_full_path(self, file):
-        return file if self.cwd == "" else "{cwd}{sep}{path}".format(cwd=self.cwd, sep=self.sep, path=file)
+    def _create_full_path(self, file_name):
+        return file_name if self.cwd == "" else "{cwd}{sep}{path}".format(cwd=self.cwd, sep=self.sep, path=file_name)
 
 class AzureBlobMap(object):
     def __init__(self, location, fs):
