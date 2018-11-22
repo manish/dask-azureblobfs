@@ -5,9 +5,7 @@
 
 import os
 import unittest
-import azureblobfs
-
-import dask.bytes.core
+import warnings
 
 from azureblobfs.fs import AzureBlobFileSystem
 from azureblobfs.utils import generate_guid
@@ -22,6 +20,7 @@ class SplitContainerBlobTest(unittest.TestCase):
         self.account_key = os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
         self.connection = BlockBlobService(account_name=self.account_name, account_key=self.account_key)
         self.fs = AzureBlobFileSystem(self.container, self.connection)
+        warnings.simplefilter("ignore", ResourceWarning)
 
     def test_ls(self):
         folder_list = self.fs.ls()
