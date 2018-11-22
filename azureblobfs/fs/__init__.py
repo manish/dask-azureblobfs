@@ -68,7 +68,7 @@ class AzureBlobFileSystem(object):
             return set(filter(lambda x: fnmatch.fnmatch(x, pattern), subpath))
 
     def mkdir(self, dir_name):
-        pass
+        self.touch("{dir_name}/".format(dir_name=dir_name))
 
     def cd(self, dir_name=None):
         if dir_name == None:
@@ -92,8 +92,8 @@ class AzureBlobFileSystem(object):
             raise IOError(
                 "File '{file}' does not exist under '{cwd}{sep}'".format(file=file, cwd=self.cwd, sep=self.sep))
 
-    def touch(self, file):
-        full_path = self._create_full_path(file)
+    def touch(self, file_name):
+        full_path = self._create_full_path(file_name)
         container_lease = None
         try:
             container_lease = self.service.acquire_container_lease(self.container)
@@ -103,14 +103,25 @@ class AzureBlobFileSystem(object):
                 self.service.release_container_lease(self.container, container_lease)
         return full_path
 
-    def rmdir(self, path):
-        pass
-
     def mv(self, src_path, dst_path):
-        pass
+        try:
+            self.cp(src_path, dst_path)
+            self.rm(src_path)
+            return True
+        except:
+            self.rm(dst_path)
+            return False
 
     def cp(self, src_path, dst_path):
-        pass
+        copy_container_lease = None
+        full_src_path = self._create_full_path(src_path)
+        full_dst_path = self._create_full_path(dst_path)
+        try:
+            copy_container_lease = self.service.acquire_container_lease(self.container)
+            self.service.copy_blob(self.container, full_dst_path, self.service.make_blob_url(self.container, full_src_path))
+        finally:
+            if copy_container_lease is not None:
+                self.service.release_container_lease(self.container, copy_container_lease)
 
     def pwd(self):
         return self.cwd

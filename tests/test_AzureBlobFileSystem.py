@@ -76,3 +76,22 @@ class SplitContainerBlobTest(unittest.TestCase):
         self.assertEqual(len(tail_content), 50)
         self.assertEqual(tail_content, b'.201,0,68.7,38,42.1,66.1,7.55,0.0748,351,1,100,15\n')
 
+    def test_touch_mv_cp_rm(self):
+        folder_name = "test_touch_mv_cp_rm"
+        self.fs.mkdir(folder_name)
+        self.fs.cd(folder_name)
+        src_file_name = generate_guid()
+        dst_file_name = generate_guid()
+        try:
+            self.assertEqual(self.fs.touch(src_file_name), "{folder_name}/{src_file_name}".format(
+                folder_name=folder_name, src_file_name=src_file_name))
+            self.assertIn(src_file_name, self.fs.ls())
+            self.assertTrue(self.fs.mv(src_file_name, dst_file_name))
+            self.assertNotIn(src_file_name, self.fs.ls())
+            self.assertIn(dst_file_name, self.fs.ls())
+            self.fs.cp(dst_file_name, src_file_name)
+            self.assertIn(src_file_name, self.fs.ls())
+            self.assertIn(dst_file_name, self.fs.ls())
+        finally:
+            self.fs.rm(src_file_name)
+            self.fs.rm(dst_file_name)
