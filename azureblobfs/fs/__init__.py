@@ -120,10 +120,14 @@ class AzureBlobFileSystem(object):
                  for blob in self.service.list_blobs(self.container) }
 
     def head(self, path, bytes_count):
-        pass
+        return self.service.get_blob_to_bytes(self.container, self._create_full_path(path), start_range=0,
+                                              end_range=bytes_count-1).content
 
     def tail(self, path, bytes_count):
-        pass
+        full_path = self._create_full_path(path)
+        size = self.service.get_blob_properties(self.container, full_path).properties.content_length
+        return self.service.get_blob_to_bytes(self.container, full_path, start_range=size-bytes_count,
+                                              end_range=size-1).content
 
     def _ls_subfolder(self, blobs):
         subpath = map(lambda blob: blob.replace(self.cwd, ""), [item.name for item in blobs])

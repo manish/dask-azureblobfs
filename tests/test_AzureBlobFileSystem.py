@@ -65,3 +65,16 @@ class SplitContainerBlobTest(unittest.TestCase):
         du_results = self.fs.du()
         self.assertIn(('weathers/rdu-weather-history.csv', 480078), du_results.items())
         self.assertIn(('weathers/Local_Weather_Data.csv', 7580289), du_results.items())
+
+    def test_head(self):
+        self.fs.cd()
+        head_content = self.fs.head("weathers/Local_Weather_Data.csv", 20)
+        self.assertEqual(len(head_content), 20)
+        self.assertEqual(head_content, b'RowID,DateTime,TempO')
+
+    def test_tail(self):
+        self.fs.cd()
+        tail_content = self.fs.tail("weathers/Local_Weather_Data.csv", 50)
+        self.assertEqual(len(tail_content), 50)
+        self.assertEqual(tail_content, b'.201,0,68.7,38,42.1,66.1,7.55,0.0748,351,1,100,15\n')
+
