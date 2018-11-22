@@ -90,7 +90,7 @@ class AzureBlobFileSystem(object):
                     self.service.release_blob_lease(self.container, full_path, path_delete_lease)
         else:
             raise IOError(
-                "File '{file}' does not exist under '{cwd}{sep}'".format(file=file, cwd=self.cwd, sep=self.sep))
+                "File '{file}' does not exist under '{cwd}{sep}'".format(file=file_name, cwd=self.cwd, sep=self.sep))
 
     def touch(self, file_name):
         full_path = self._create_full_path(file_name)
