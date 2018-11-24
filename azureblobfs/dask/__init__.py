@@ -60,7 +60,7 @@ class DaskAzureBlobFileSystem(LocalFileSystem):
 
     def open(self, path, mode='rb', **kwargs):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
-        return AzureBlobReadableFile(self.connection, container, blob_pattern)
+        return AzureBlobReadableFile(self.connection, container, blob_pattern, mode)
 
     def size(self, path):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
