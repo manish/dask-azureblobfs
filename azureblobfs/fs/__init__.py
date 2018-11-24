@@ -23,20 +23,21 @@
 # THE SOFTWARE.
 
 import io
+import os
+import tempfile
 import fnmatch
 
 from azure.storage.blob.blockblobservice import BlockBlobService
 
-DEFAULT_BLOCK_SIZE = 128*1024
+from azureblobfs.utils import generate_guid
 
 class AzureBlobReadableFile(object):
     allowed_whence_values = (0, 1, 2)
-    def __init__(self, connection, container, blob_path, mode='rb', block_size = DEFAULT_BLOCK_SIZE, **kwargs):
+    def __init__(self, connection, container, blob_path, mode='rb', **kwargs):
         self.connection = connection
         self.container = container
         self.blob_path = blob_path
         self.mode = mode
-        self.block_size = block_size
         self.kwargs = kwargs
 
         self.blob_props = self.connection.get_blob_properties(container, blob_path).properties
@@ -44,83 +45,45 @@ class AzureBlobReadableFile(object):
         self.content_type = self.blob_props.content_settings.content_type
         self.is_content_type_text = "text" in self.content_type or 'b' not in self.mode
 
-        self.loc = 0
-        self.remote_start = 0
-        self.remote_end = self.remote_start + self.block_size
-        self.buffer = None
+        self.fid = None
 
     def read(self, length=None):
-        if length is None:
-            self._fetch(self.loc, self._get_end_loc())
-            self.loc = self._get_end_loc()
-            return self.buffer
-
-        start = self.loc
-        self.loc = end = self.loc + length
-        return self.buffer[start:end]
+        return self.fid.read(length)
 
     def readline(self):
-        newline_index = self.buffer[self.loc:].find('\n')
-        #if newline_index < 0:
+        return self.fid.readline()
 
     def seek(self, loc, whence=0):
-        if whence not in self.allowed_whence_values:
-            raise ValueError("whence should be one of these '{whence_values}'".format(whence_values=self.allowed_whence_values))
-        if whence == 0:
-            self.loc = loc
-        if whence == 1:
-            self.loc = self.loc + loc
-        if whence == 2:
-            self.loc = self.size + loc
-        if self.loc > self.size:
-            raise ValueError("Trying to seek beyond end of file of size '{size}' with whence '{whence}'".format(
-                size=self.size, whence=whence))
-        if self.loc < 0:
-            raise ValueError("Trying to seek before start of file of size '{size}' with whence '{whence}'".format(
-                size=self.size, whence=whence))
-        return self.loc
+        return self.fid.seek(loc, whence)
 
-
-    def _fetch(self, start = None, length=None):
-        if self.loc >= self.remote_end:
-            self._compute_remote_start_end(self.loc, length)
-        else:
-            self._compute_remote_start_end(start, length)
-        self.buffer = self._get_buffer(container_name=self.container, blob_name=self.blob_path, start_range=self.remote_start, end_range=self.remote_end)
-
-    def _compute_remote_start_end(self, start, fetch_size=None):
-        fetch_size = fetch_size or self.block_size
-        self.remote_start = start or self.remote_start
-        self.remote_end = self.remote_start + fetch_size
-        self._compute_remote_end()
-
-    def _get_buffer(self, container_name, blob_name, start_range, end_range):
+    def _get_buffer(self, container_name, blob_name, start_range=None, end_range=None):
         return self.connection.get_blob_to_text(container_name, blob_name, start_range=start_range, end_range=end_range).content if self.is_content_type_text \
             else self.connection.get_blob_to_bytes(container_name, blob_name, start_range=start_range, end_range=end_range).content
-
-    def _compute_remote_end(self):
-        self.remote_end = self._get_end_loc() if self.remote_end >= self.size else self.remote_end
-
-    def _get_end_loc(self):
-        return self.size - 1
     
     def close(self):
-        pass
+        if self.fid is not None:
+            self.fid.close()
+            self.fid = None
 
     def tell(self):
-        return self.loc
+        return self.fid.tell()
 
     def readable(self):
-        return True
+        return self.fid.readable()
 
     def seekable(self):
-        return True
+        return self.fid.seekable()
 
     def writable(self):
         return False
 
     def __enter__(self):
-        self._fetch()
+        self.tmp_dir = tempfile.mkdtemp(generate_guid())
+        tmp_path = os.path.join(self.tmp_dir, self.blob_path.replace("/", "-"))
+        with open(tmp_path, "wb" if not self.is_content_type_text else 'w') as fid:
+            fid.write(self._get_buffer(self.container, self.blob_path))
+        self.fid = open(tmp_path, "rb" if not self.is_content_type_text else 'r')
+        self.fid.seek(0)
         return self
 
     def __exit__(self, *args):
