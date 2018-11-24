@@ -53,6 +53,10 @@ class AzureBlobReadableFile(object):
     def readline(self):
         return self.fid.readline()
 
+    def readlines(self):
+        return self.fid.readlines()
+
+
     def seek(self, loc, whence=0):
         return self.fid.seek(loc, whence)
 
