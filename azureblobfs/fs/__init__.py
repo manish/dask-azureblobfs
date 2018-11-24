@@ -38,17 +38,30 @@ class AzureBlobReadableFile(object):
         self.mode = mode
         self.block_size = block_size
         self.kwargs = kwargs
-        self.size = self.connection.get_blob_properties(container, blob_path).properties.content_length
-        self.loc = 0
 
+        self.blob_props = self.connection.get_blob_properties(container, blob_path).properties
+        self.size = self.blob_props.content_length
+        self.content_type = self.blob_props.content_settings.content_type
+        self.is_content_type_text = "text" in self.content_type or 'b' not in self.mode
+
+        self.loc = 0
         self.remote_start = 0
         self.remote_end = self.remote_start + self.block_size
-        self.cls = io.BytesIO if 'b' in self.mode else io.TextIOWrapper
         self.buffer = None
 
     def read(self, length=None):
-        self._fetch(self.loc, length)
-        return self.buffer.read(length)
+        if length is None:
+            self._fetch(self.loc, self._get_end_loc())
+            self.loc = self._get_end_loc()
+            return self.buffer
+
+        start = self.loc
+        self.loc = end = self.loc + length
+        return self.buffer[start:end]
+
+    def readline(self):
+        newline_index = self.buffer[self.loc:].find('\n')
+        #if newline_index < 0:
 
     def seek(self, loc, whence=0):
         if whence not in self.allowed_whence_values:
@@ -69,22 +82,27 @@ class AzureBlobReadableFile(object):
 
 
     def _fetch(self, start = None, length=None):
-        if self.buffer is None:
-            self._compute_remote_start_end(start, length)
-
         if self.loc >= self.remote_end:
             self._compute_remote_start_end(self.loc, length)
-
-        self.buffer = self.cls(self.connection.get_blob_to_bytes(self.container, self.blob_path,
-                                                                       start_range=self.remote_start,
-                                                                       end_range=self.remote_end).content)
+        else:
+            self._compute_remote_start_end(start, length)
+        self.buffer = self._get_buffer(container_name=self.container, blob_name=self.blob_path, start_range=self.remote_start, end_range=self.remote_end)
 
     def _compute_remote_start_end(self, start, fetch_size=None):
         fetch_size = fetch_size or self.block_size
         self.remote_start = start or self.remote_start
         self.remote_end = self.remote_start + fetch_size
-        self.remote_end = self.size if self.remote_end > self.size else self.remote_start
+        self._compute_remote_end()
 
+    def _get_buffer(self, container_name, blob_name, start_range, end_range):
+        return self.connection.get_blob_to_text(container_name, blob_name, start_range=start_range, end_range=end_range).content if self.is_content_type_text \
+            else self.connection.get_blob_to_bytes(container_name, blob_name, start_range=start_range, end_range=end_range).content
+
+    def _compute_remote_end(self):
+        self.remote_end = self._get_end_loc() if self.remote_end >= self.size else self.remote_end
+
+    def _get_end_loc(self):
+        return self.size - 1
     def close(self):
         pass
 
@@ -101,6 +119,7 @@ class AzureBlobReadableFile(object):
         return False
 
     def __enter__(self):
+        self._fetch()
         return self
 
     def __exit__(self, *args):
