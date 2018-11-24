@@ -103,6 +103,7 @@ class AzureBlobReadableFile(object):
 
     def _get_end_loc(self):
         return self.size - 1
+    
     def close(self):
         pass
 
