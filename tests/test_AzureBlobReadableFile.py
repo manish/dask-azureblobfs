@@ -39,20 +39,16 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
             self.assertEqual(fid.tell(), 0)
             self.assertEqual(fid.seek(30), 30)
             self.assertEqual(fid.seek(30), 30)
-            self.assertEqual(fid.seek(10, 1), 40)
-            self.assertEqual(fid.seek(-30, 1), 10)
             with self.assertRaises(ValueError) as context:
                 fid.seek(-30)
-            with self.assertRaises(ValueError) as context:
-                fid.seek(fid.size + 20)
 
     def test_text_read_seek(self):
         with AzureBlobReadableFile(self.connection, self.container, self.text_blob_name, mode='r') as fid:
             self.assertEqual(fid.read(50), 'RowID,DateTime,TempOut,HiTemp,LowTemp,OutHum,DewPt')
             self.assertEqual(fid.read(30), ',WindSpeed,WindDir,WindRun,HiS')
-            self.assertEqual(fid.seek(20, 1), 100)
+            self.assertEqual(fid.seek(100), 100)
             self.assertEqual(fid.read(30), ',HeatIndex,THWIndex,Bar,Rain,R')
-            self.assertEqual(fid.seek(-80, 1), 50)
+            self.assertEqual(fid.seek(50), 50)
             self.assertEqual(fid.read(30), ',WindSpeed,WindDir,WindRun,HiS')
 
     def test_binary_read_seek(self):
@@ -69,3 +65,12 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
                         self.assertTrue(numpy.array_equal(found_np_array, expected_np_array),
                             "Expected numpy array to be {expected} but found {found}".format(
                                 expected=expected_np_array, found=found_np_array))
+
+    def test_readline(self):
+        with AzureBlobReadableFile(self.connection, self.container, self.text_blob_name, mode='r') as remote_fid,\
+            open("tests/testdata/Local_Weather_data.csv") as local_fid:
+            for expected_line in local_fid:
+                actual_line = remote_fid.readline()
+                self.assertEqual(actual_line, expected_line,
+                                 "\nError:\nActual:\n{actual_line}\nExpected:\n{expected_line}".format(
+                                     actual_line=actual_line, expected_line=expected_line))
