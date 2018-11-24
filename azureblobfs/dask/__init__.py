@@ -30,6 +30,8 @@ from azure.storage.blob.blockblobservice import BlockBlobService
 import dask.bytes.core
 from dask.bytes.local import LocalFileSystem
 
+from azureblobfs.fs import AzureBlobReadableFile
+
 class DaskAzureBlobFileSystem(LocalFileSystem):
     protocol="abfs"
     def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
@@ -57,7 +59,8 @@ class DaskAzureBlobFileSystem(LocalFileSystem):
             self.connection.create_container(container, kwargs)
 
     def open(self, path, mode='rb', **kwargs):
-        pass
+        container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
+        return AzureBlobReadableFile(self.connection, container, blob_pattern)
 
     def size(self, path):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
