@@ -59,10 +59,13 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
         expected_np_array = numpy.array([2, 34,  5,  3,  4])
         with AzureBlobReadableFile(self.connection, self.container, self.binary_blob_name) as fid:
             self.assertEqual(fid.tell(), 0)
-            self.assertEqual(fid.seek(0), 0)
-            with tempfile.NamedTemporaryFile() as tmp_f:
-                tmp_f.write(fid.read())
-                tmp_f.seek(0)
-                found_np_array = numpy.load(tmp_f)
-                self.assertTrue(numpy.array_equal(found_np_array, expected_np_array),
-                    "Expected numpy array to be {expected} but found {found}".format(expected=expected_np_array, found=found_np_array))
+            for size in [None, 248, 5000]:
+                with self.subTest(size=size):
+                    self.assertEqual(fid.seek(0), 0)
+                    with tempfile.NamedTemporaryFile() as tmp_f:
+                        tmp_f.write(fid.read(size))
+                        tmp_f.seek(0)
+                        found_np_array = numpy.load(tmp_f)
+                        self.assertTrue(numpy.array_equal(found_np_array, expected_np_array),
+                            "Expected numpy array to be {expected} but found {found}".format(
+                                expected=expected_np_array, found=found_np_array))
