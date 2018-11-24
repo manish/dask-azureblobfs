@@ -23,23 +23,73 @@
 # THE SOFTWARE.
 
 import io
-import os
 import fnmatch
 
 from azure.storage.blob.blockblobservice import BlockBlobService
 
-class AzureBlobFile(object):
-    def __init__(self, **kwargs):
+DEFAULT_BLOCK_SIZE = 128*1024
+
+class AzureBlobReadableFile(object):
+    allowed_whence_values = (0, 1, 2)
+    def __init__(self, connection, container, blob_path, mode='rb', block_size = DEFAULT_BLOCK_SIZE, **kwargs):
+        self.connection = connection
+        self.container = container
+        self.blob_path = blob_path
+        self.mode = mode
+        self.block_size = block_size
         self.kwargs = kwargs
+        self.size = self.connection.get_blob_properties(container, blob_path).properties.content_length
+        self.loc = 0
 
-    def read(self, length):
-        pass
+        self.remote_start = 0
+        self.remote_end = self.remote_start + self.block_size
+        self.cls = io.BytesIO if 'b' in self.mode else io.TextIOWrapper
+        self.buffer = None
 
-    def tell(self):
-        pass
+    def read(self, length=None):
+        self._fetch(self.loc, length)
+        return self.buffer.read(length)
+
+    def seek(self, loc, whence=0):
+        if whence not in self.allowed_whence_values:
+            raise ValueError("whence should be one of these '{whence_values}'".format(whence_values=self.allowed_whence_values))
+        if whence == 0:
+            self.loc = loc
+        if whence == 1:
+            self.loc = self.loc + loc
+        if whence == 2:
+            self.loc = self.size + loc
+        if self.loc > self.size:
+            raise ValueError("Trying to seek beyond end of file of size '{size}' with whence '{whence}'".format(
+                size=self.size, whence=whence))
+        if self.loc < 0:
+            raise ValueError("Trying to seek before start of file of size '{size}' with whence '{whence}'".format(
+                size=self.size, whence=whence))
+        return self.loc
+
+
+    def _fetch(self, start = None, length=None):
+        if self.buffer is None:
+            self._compute_remote_start_end(start, length)
+
+        if self.loc >= self.remote_end:
+            self._compute_remote_start_end(self.loc, length)
+
+        self.buffer = self.cls(self.connection.get_blob_to_bytes(self.container, self.blob_path,
+                                                                       start_range=self.remote_start,
+                                                                       end_range=self.remote_end).content)
+
+    def _compute_remote_start_end(self, start, fetch_size=None):
+        fetch_size = fetch_size or self.block_size
+        self.remote_start = start or self.remote_start
+        self.remote_end = self.remote_start + fetch_size
+        self.remote_end = self.size if self.remote_end > self.size else self.remote_start
 
     def close(self):
         pass
+
+    def tell(self):
+        return self.loc
 
     def readable(self):
         return True
@@ -49,6 +99,15 @@ class AzureBlobFile(object):
 
     def writable(self):
         return False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    def __del__(self):
+        self.close()
 
 class AzureBlobFileSystem(object):
     def __init__(self, container, service, **kwargs):
