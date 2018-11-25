@@ -83,7 +83,7 @@ class AzureBlobReadableFile(object):
     def __enter__(self):
         self.tmp_dir = tempfile.mkdtemp(generate_guid())
         self.tmp_path = os.path.join(self.tmp_dir, self.blob_path.replace("/", "-"))
-        self.connection.get_blob_to_path(self.container, self.blob_path, tmp_path)
+        self.connection.get_blob_to_path(self.container, self.blob_path, self.tmp_path)
         self.fid = open(self.tmp_path, "rb" if not self.is_content_type_text else 'r')
         self.fid.seek(0)
         return self
