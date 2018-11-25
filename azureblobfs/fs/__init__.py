@@ -24,31 +24,75 @@
 
 import io
 import os
+import tempfile
 import fnmatch
 
 from azure.storage.blob.blockblobservice import BlockBlobService
 
-class AzureBlobFile(object):
-    def __init__(self, **kwargs):
+from azureblobfs.utils import generate_guid
+
+class AzureBlobReadableFile(object):
+    allowed_whence_values = (0, 1, 2)
+    def __init__(self, connection, container, blob_path, mode='rb', **kwargs):
+        self.connection = connection
+        self.container = container
+        self.blob_path = blob_path
+        self.mode = mode
         self.kwargs = kwargs
 
-    def read(self, length):
-        pass
+        self.blob_props = self.connection.get_blob_properties(container, blob_path).properties
+        self.size = self.blob_props.content_length
+        self.content_type = self.blob_props.content_settings.content_type
+        self.is_content_type_text = "text" in self.content_type or 'b' not in self.mode
 
-    def tell(self):
-        pass
+        self.tmp_path = None
+        self.fid = None
+
+    def read(self, length=None):
+        return self.fid.read(length)
+
+    def readline(self):
+        return self.fid.readline()
+
+    def readlines(self):
+        return self.fid.readlines()
+
+
+    def seek(self, loc, whence=0):
+        return self.fid.seek(loc, whence)
 
     def close(self):
-        pass
+        if self.fid is not None:
+            self.fid.close()
+            os.remove(self.tmp_path)
+            self.fid = None
+            self.tmp_path = None
+
+    def tell(self):
+        return self.fid.tell()
 
     def readable(self):
-        return True
+        return self.fid.readable()
 
     def seekable(self):
-        return True
+        return self.fid.seekable()
 
     def writable(self):
         return False
+
+    def __enter__(self):
+        self.tmp_dir = tempfile.mkdtemp(generate_guid())
+        self.tmp_path = os.path.join(self.tmp_dir, self.blob_path.replace("/", "-"))
+        self.connection.get_blob_to_path(self.container, self.blob_path, self.tmp_path)
+        self.fid = open(self.tmp_path, "rb" if not self.is_content_type_text else 'r')
+        self.fid.seek(0)
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
+    def __del__(self):
+        self.close()
 
 class AzureBlobFileSystem(object):
     def __init__(self, container, service, **kwargs):
@@ -90,7 +134,7 @@ class AzureBlobFileSystem(object):
                     self.service.release_blob_lease(self.container, full_path, path_delete_lease)
         else:
             raise IOError(
-                "File '{file}' does not exist under '{cwd}{sep}'".format(file=file, cwd=self.cwd, sep=self.sep))
+                "File '{file}' does not exist under '{cwd}{sep}'".format(file=file_name, cwd=self.cwd, sep=self.sep))
 
     def touch(self, file_name):
         full_path = self._create_full_path(file_name)
