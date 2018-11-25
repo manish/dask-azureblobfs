@@ -5,9 +5,9 @@
 
 import os
 import tempfile
-import base64
 import unittest
 import warnings
+import urllib.request
 
 import numpy
 
@@ -67,8 +67,13 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
                                 expected=expected_np_array, found=found_np_array))
 
     def test_readline(self):
+        local_file = os.path.join(os.getcwd(), "tests/testdata/Local_Weather_data.csv")
+        if not os.path.exists(os.path.dirname(local_file)):
+            os.mkdir(os.path.dirname(local_file))
+        urllib.request.urlretrieve("https://e29.blob.core.windows.net/public/Local_Weather_Data.csv", local_file)
+
         with AzureBlobReadableFile(self.connection, self.container, self.text_blob_name, mode='r') as remote_fid,\
-            open(os.path.join(os.getcwd(), "tests/testdata/Local_Weather_data.csv")) as local_fid:
+            open(local_file) as local_fid:
             for expected_line in local_fid:
                 actual_line = remote_fid.readline()
                 self.assertEqual(actual_line, expected_line,
