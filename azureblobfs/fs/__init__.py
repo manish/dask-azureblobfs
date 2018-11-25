@@ -45,6 +45,7 @@ class AzureBlobReadableFile(object):
         self.content_type = self.blob_props.content_settings.content_type
         self.is_content_type_text = "text" in self.content_type or 'b' not in self.mode
 
+        self.tmp_path = None
         self.fid = None
 
     def read(self, length=None):
@@ -60,14 +61,12 @@ class AzureBlobReadableFile(object):
     def seek(self, loc, whence=0):
         return self.fid.seek(loc, whence)
 
-    def _get_buffer(self, container_name, blob_name, start_range=None, end_range=None):
-        return self.connection.get_blob_to_text(container_name, blob_name, start_range=start_range, end_range=end_range).content if self.is_content_type_text \
-            else self.connection.get_blob_to_bytes(container_name, blob_name, start_range=start_range, end_range=end_range).content
-    
     def close(self):
         if self.fid is not None:
             self.fid.close()
+            os.remove(self.tmp_path)
             self.fid = None
+            self.tmp_path = None
 
     def tell(self):
         return self.fid.tell()
@@ -83,10 +82,9 @@ class AzureBlobReadableFile(object):
 
     def __enter__(self):
         self.tmp_dir = tempfile.mkdtemp(generate_guid())
-        tmp_path = os.path.join(self.tmp_dir, self.blob_path.replace("/", "-"))
-        with open(tmp_path, "wb" if not self.is_content_type_text else 'w') as fid:
-            fid.write(self._get_buffer(self.container, self.blob_path))
-        self.fid = open(tmp_path, "rb" if not self.is_content_type_text else 'r')
+        self.tmp_path = os.path.join(self.tmp_dir, self.blob_path.replace("/", "-"))
+        self.connection.get_blob_to_path(self.container, self.blob_path, tmp_path)
+        self.fid = open(self.tmp_path, "rb" if not self.is_content_type_text else 'r')
         self.fid.seek(0)
         return self
 
