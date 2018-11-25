@@ -10,6 +10,8 @@ python:
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: docker-compose build
 
+before_script: mkdir -p tests/testdata && curl -O https://e29.blob.core.windows.net/public/Local_Weather_Data.csv tests/testdata/Local_Weather_Data.csv
+
 # Command to run tests, e.g. python setup.py test
 jobs:
   include:
