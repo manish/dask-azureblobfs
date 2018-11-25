@@ -68,7 +68,7 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
 
     def test_readline(self):
         with AzureBlobReadableFile(self.connection, self.container, self.text_blob_name, mode='r') as remote_fid,\
-            open("tests/testdata/Local_Weather_data.csv") as local_fid:
+            open(os.path.join(os.getcwd(), "tests/testdata/Local_Weather_data.csv")) as local_fid:
             for expected_line in local_fid:
                 actual_line = remote_fid.readline()
                 self.assertEqual(actual_line, expected_line,
