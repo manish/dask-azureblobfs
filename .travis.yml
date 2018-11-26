@@ -22,5 +22,7 @@ jobs:
     - stage: test-AzureBlobReadableFile
       # Command to run tests, e.g. python setup.py test
       script: ./drun_app python -m unittest -v tests.test_AzureBlobReadableFile
-
+    - stage: test-DaskAzureBlobFileSystem
+      # Command to run tests, e.g. python setup.py test
+      script: ./drun_app python -m unittest -v tests.test_DaskAzureBlobFileSystem
 
