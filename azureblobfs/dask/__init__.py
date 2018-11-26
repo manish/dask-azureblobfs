@@ -34,6 +34,7 @@ from azureblobfs.fs import AzureBlobReadableFile
 
 class DaskAzureBlobFileSystem(LocalFileSystem):
     protocol="abfs"
+    sep = "/"
     def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
         super(DaskAzureBlobFileSystem, self).__init__()
 
