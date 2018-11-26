@@ -52,7 +52,8 @@ class DaskAzureBlobFileSystem(LocalFileSystem):
 
     def glob(self, path):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
-        return filter(lambda x: fnmatch.fnmatch(x.name, blob_pattern), self.connection.list_blobs(container))
+        return map(lambda x: "{}{}{}".format(container, self.sep, x.name),
+                   filter(lambda x: fnmatch.fnmatch(x.name, blob_pattern), self.connection.list_blobs(container)))
 
     def mkdirs(self, path, **kwargs):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
