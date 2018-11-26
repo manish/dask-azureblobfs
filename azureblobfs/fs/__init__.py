@@ -47,6 +47,7 @@ class AzureBlobReadableFile(object):
 
         self.tmp_path = None
         self.fid = None
+        self._open()
 
     def read(self, length=None):
         return self.fid.read(length)
@@ -56,7 +57,6 @@ class AzureBlobReadableFile(object):
 
     def readlines(self):
         return self.fid.readlines()
-
 
     def seek(self, loc, whence=0):
         return self.fid.seek(loc, whence)
@@ -81,11 +81,8 @@ class AzureBlobReadableFile(object):
         return False
 
     def __enter__(self):
-        self.tmp_dir = tempfile.mkdtemp(generate_guid())
-        self.tmp_path = os.path.join(self.tmp_dir, self.blob_path.replace("/", "-"))
-        self.connection.get_blob_to_path(self.container, self.blob_path, self.tmp_path)
-        self.fid = open(self.tmp_path, "rb" if not self.is_content_type_text else 'r')
-        self.fid.seek(0)
+        if self.fid is None:
+            self._open()
         return self
 
     def __exit__(self, *args):
@@ -93,6 +90,13 @@ class AzureBlobReadableFile(object):
 
     def __del__(self):
         self.close()
+
+    def _open(self):
+        self.tmp_dir = tempfile.mkdtemp(generate_guid())
+        self.tmp_path = os.path.join(self.tmp_dir, self.blob_path.replace("/", "-"))
+        self.connection.get_blob_to_path(self.container, self.blob_path, self.tmp_path)
+        self.fid = open(self.tmp_path, "rb")
+        self.fid.seek(0)
 
 class AzureBlobFileSystem(object):
     def __init__(self, container, service, **kwargs):
