@@ -81,4 +81,8 @@ class DaskAzureBlobFileSystem(LocalFileSystem):
                 protocol=DaskAzureBlobFileSystem.protocol, path=path))
         return trimmed_path[:index_sep], trimmed_path[index_sep+1:]
 
+    @classmethod
+    def join_container_blob(self, container, blob):
+        return "{container}{sep}{blob}".format(container=container, sep=DaskAzureBlobFileSystem.sep, blob=blob)
+
 dask.bytes.core._filesystems[DaskAzureBlobFileSystem.protocol] = DaskAzureBlobFileSystem
