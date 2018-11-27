@@ -101,33 +101,20 @@ class AzureBlobReadableFile(object):
 class AzureBlobFileSystem(object):
     def __init__(self, container, connection, **kwargs):
         if not isinstance(connection, BlockBlobService):
-            raise TypeError("service needs to be of type azure.storage.blob.blockblobservice.BlockBlobService")
+            raise TypeError("Argument connection needs to be of type azure.storage.blob.blockblobservice.BlockBlobService")
         self.connection = connection
         self.kwargs = kwargs
         self.container = container
-        self.cwd = ""
         self.sep = "/"
 
     def ls(self, pattern=None):
-        subpath = self._ls_subfolder(self.connection.list_blobs(self.container))
-        if not pattern:
-            return set(map(lambda x: x[:x.find("/")+1] if x.find("/") >=0 else x, subpath))
-        else:
-            return set(filter(lambda x: fnmatch.fnmatch(x, pattern), subpath))
+        return list(set(filter(lambda x: fnmatch.fnmatch(x, pattern) if pattern else x,
+                               map(lambda x: x.name, self.connection.list_blobs(self.container)))))
 
     def mkdir(self, dir_name):
         self.touch("{dir_name}/".format(dir_name=dir_name))
 
-    def cd(self, dir_name=None):
-        if dir_name == None:
-            self.cwd = ""
-        elif "{dir_name}{sep}".format(dir_name=dir_name, sep=self.sep) in self.ls():
-            self.cwd = dir_name if self.cwd == "" else "{cwd}{sep}{dir_name}".format(cwd = self.cwd, sep=self.sep, dir_name=dir_name)
-        else:
-            raise IOError("Directory '{dir_name}' does not exist under '{cwd}{sep}'".format(dir_name=dir_name, cwd=self.cwd, sep=self.sep))
-
-    def rm(self, file_name):
-        full_path = self._create_full_path(file_name)
+    def rm(self, full_path):
         if self.connection.exists(self.container, full_path):
             path_delete_lease = None
             try:
@@ -138,10 +125,9 @@ class AzureBlobFileSystem(object):
                     self.connection.release_blob_lease(self.container, full_path, path_delete_lease)
         else:
             raise IOError(
-                "File '{file}' does not exist under '{cwd}{sep}'".format(file=file_name, cwd=self.cwd, sep=self.sep))
+                "File '{file}' does not exist under container '{container}'".format(file=full_path, container=self.container))
 
-    def touch(self, file_name):
-        full_path = self._create_full_path(file_name)
+    def touch(self, full_path):
         container_lease = None
         try:
             container_lease = self.connection.acquire_container_lease(self.container)
@@ -160,10 +146,8 @@ class AzureBlobFileSystem(object):
             self.rm(dst_path)
             return False
 
-    def cp(self, src_path, dst_path):
+    def cp(self, full_src_path, full_dst_path):
         copy_container_lease = None
-        full_src_path = self._create_full_path(src_path)
-        full_dst_path = self._create_full_path(dst_path)
         try:
             copy_container_lease = self.connection.acquire_container_lease(self.container)
             self.connection.copy_blob(self.container, full_dst_path, self.connection.make_blob_url(self.container, full_src_path))
@@ -171,26 +155,15 @@ class AzureBlobFileSystem(object):
             if copy_container_lease is not None:
                 self.connection.release_container_lease(self.container, copy_container_lease)
 
-    def pwd(self):
-        return self.cwd
-
     def du(self):
         return { blob.name : blob.properties.content_length
                  for blob in self.connection.list_blobs(self.container) }
 
-    def head(self, path, bytes_count):
-        return self.connection.get_blob_to_bytes(self.container, self._create_full_path(path), start_range=0,
+    def head(self, full_path, bytes_count):
+        return self.connection.get_blob_to_bytes(self.container, full_path, start_range=0,
                                               end_range=bytes_count-1).content
 
-    def tail(self, path, bytes_count):
-        full_path = self._create_full_path(path)
+    def tail(self, full_path, bytes_count):
         size = self.connection.get_blob_properties(self.container, full_path).properties.content_length
         return self.connection.get_blob_to_bytes(self.container, full_path, start_range=size-bytes_count,
                                               end_range=size-1).content
-
-    def _ls_subfolder(self, blobs):
-        subpath = map(lambda blob: blob.replace(self.cwd, ""), [item.name for item in blobs])
-        return map(lambda blob: blob[1:] if blob.startswith(self.sep) else blob, subpath)
-
-    def _create_full_path(self, file_name):
-        return file_name if self.cwd == "" else "{cwd}{sep}{path}".format(cwd=self.cwd, sep=self.sep, path=file_name)
