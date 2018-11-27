@@ -194,35 +194,3 @@ class AzureBlobFileSystem(object):
 
     def _create_full_path(self, file_name):
         return file_name if self.cwd == "" else "{cwd}{sep}{path}".format(cwd=self.cwd, sep=self.sep, path=file_name)
-
-class AzureBlobMap(object):
-    def __init__(self, location, fs):
-        self.location = location
-        self.fs = fs
-
-    def clear(self):
-        pass
-
-    def get(self, key, default_value=None):
-        pass
-
-    def items(self):
-        pass
-
-    def keys(self):
-        pass
-
-    def pop(self, key, default_value=None):
-        pass
-
-    def popitem(self):
-        pass
-
-    def setdefault(self, key, default_value=None):
-        pass
-
-    def update(self, key, **value):
-        pass
-
-    def values(self):
-        pass
