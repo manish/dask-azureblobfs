@@ -43,20 +43,20 @@ class DaskAzureBlobFileSystemTest(unittest.TestCase):
 
     account_name="e29"
     container_name = "abfs-methods"
-    files = { "Local_Weather_Data.csv": {"size": 7580289, "ukey": "\"0x8D64E894851407E\""},
-              "rdu-weather-history.csv": {"size": 480078, "ukey": "\"0x8D64E894B716BBD\""}}
+    files = { "abfs-methods/Local_Weather_Data.csv": {"size": 7580289, "ukey": "\"0x8D64E894851407E\""},
+              "abfs-methods/rdu-weather-history.csv": {"size": 480078, "ukey": "\"0x8D64E894B716BBD\""}}
     def setUp(self):
         self.fs = DaskAzureBlobFileSystem(account_name=self.account_name)
         warnings.simplefilter("ignore", ResourceWarning)
 
     def test_glob(self):
-        all_files = [file.name for file in self.fs.glob("{container_name}/*.csv".format(container_name=self.container_name))]
+        all_files = [file for file in self.fs.glob("{container_name}/*.csv".format(container_name=self.container_name))]
         for file in self.files:
             self.assertIn(file, all_files)
 
     def test_ukey(self):
         for file, props in self.files.items():
-            found_ukey = self.fs.ukey("{container}/{blob}".format(container=self.container_name, blob=file))
+            found_ukey = self.fs.ukey(file)
             expected_ukey =  props["ukey"]
             self.assertEqual(found_ukey, expected_ukey,
                              "For blob '{blob}', expected ukey to be '{expected_ukey}' but found '{found_ukey}'".format(
@@ -64,7 +64,7 @@ class DaskAzureBlobFileSystemTest(unittest.TestCase):
 
     def test_size(self):
         for file, props in self.files.items():
-            found_size = self.fs.size("{container}/{blob}".format(container=self.container_name, blob=file))
+            found_size = self.fs.size(file)
             expected_size =  props["size"]
             self.assertEqual(found_size, expected_size,
                              "For blob '{blob}', expected size to be '{expected_size}' but found '{found_size}'".format(
