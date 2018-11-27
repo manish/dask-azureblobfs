@@ -99,17 +99,17 @@ class AzureBlobReadableFile(object):
         self.fid.seek(0)
 
 class AzureBlobFileSystem(object):
-    def __init__(self, container, service, **kwargs):
-        if not isinstance(service, BlockBlobService):
+    def __init__(self, container, connection, **kwargs):
+        if not isinstance(connection, BlockBlobService):
             raise TypeError("service needs to be of type azure.storage.blob.blockblobservice.BlockBlobService")
-        self.service = service
+        self.connection = connection
         self.kwargs = kwargs
         self.container = container
         self.cwd = ""
         self.sep = "/"
 
     def ls(self, pattern=None):
-        subpath = self._ls_subfolder(self.service.list_blobs(self.container))
+        subpath = self._ls_subfolder(self.connection.list_blobs(self.container))
         if not pattern:
             return set(map(lambda x: x[:x.find("/")+1] if x.find("/") >=0 else x, subpath))
         else:
@@ -128,14 +128,14 @@ class AzureBlobFileSystem(object):
 
     def rm(self, file_name):
         full_path = self._create_full_path(file_name)
-        if self.service.exists(self.container, full_path):
+        if self.connection.exists(self.container, full_path):
             path_delete_lease = None
             try:
-                path_delete_lease = self.service.acquire_blob_lease(self.container, full_path)
-                self.service.delete_blob(self.container, full_path, lease_id=path_delete_lease)
+                path_delete_lease = self.connection.acquire_blob_lease(self.container, full_path)
+                self.connection.delete_blob(self.container, full_path, lease_id=path_delete_lease)
             except:
                 if path_delete_lease is not None:
-                    self.service.release_blob_lease(self.container, full_path, path_delete_lease)
+                    self.connection.release_blob_lease(self.container, full_path, path_delete_lease)
         else:
             raise IOError(
                 "File '{file}' does not exist under '{cwd}{sep}'".format(file=file_name, cwd=self.cwd, sep=self.sep))
@@ -144,11 +144,11 @@ class AzureBlobFileSystem(object):
         full_path = self._create_full_path(file_name)
         container_lease = None
         try:
-            container_lease = self.service.acquire_container_lease(self.container)
-            self.service.create_blob_from_text(self.container, full_path, "")
+            container_lease = self.connection.acquire_container_lease(self.container)
+            self.connection.create_blob_from_text(self.container, full_path, "")
         finally:
             if container_lease is not None:
-                self.service.release_container_lease(self.container, container_lease)
+                self.connection.release_container_lease(self.container, container_lease)
         return full_path
 
     def mv(self, src_path, dst_path):
@@ -165,27 +165,27 @@ class AzureBlobFileSystem(object):
         full_src_path = self._create_full_path(src_path)
         full_dst_path = self._create_full_path(dst_path)
         try:
-            copy_container_lease = self.service.acquire_container_lease(self.container)
-            self.service.copy_blob(self.container, full_dst_path, self.service.make_blob_url(self.container, full_src_path))
+            copy_container_lease = self.connection.acquire_container_lease(self.container)
+            self.connection.copy_blob(self.container, full_dst_path, self.connection.make_blob_url(self.container, full_src_path))
         finally:
             if copy_container_lease is not None:
-                self.service.release_container_lease(self.container, copy_container_lease)
+                self.connection.release_container_lease(self.container, copy_container_lease)
 
     def pwd(self):
         return self.cwd
 
     def du(self):
         return { blob.name : blob.properties.content_length
-                 for blob in self.service.list_blobs(self.container) }
+                 for blob in self.connection.list_blobs(self.container) }
 
     def head(self, path, bytes_count):
-        return self.service.get_blob_to_bytes(self.container, self._create_full_path(path), start_range=0,
+        return self.connection.get_blob_to_bytes(self.container, self._create_full_path(path), start_range=0,
                                               end_range=bytes_count-1).content
 
     def tail(self, path, bytes_count):
         full_path = self._create_full_path(path)
-        size = self.service.get_blob_properties(self.container, full_path).properties.content_length
-        return self.service.get_blob_to_bytes(self.container, full_path, start_range=size-bytes_count,
+        size = self.connection.get_blob_properties(self.container, full_path).properties.content_length
+        return self.connection.get_blob_to_bytes(self.container, full_path, start_range=size-bytes_count,
                                               end_range=size-1).content
 
     def _ls_subfolder(self, blobs):
