@@ -165,6 +165,9 @@ class AzureBlobFileSystem(object):
         return { blob.name : blob.properties.content_length
                  for blob in self.connection.list_blobs(container) }
 
+    def last_modified(self, container, full_path):
+        return self.connection.get_blob_properties(container, full_path).properties.last_modified
+
     def head(self, container, full_path, bytes_count):
         return self.connection.get_blob_to_bytes(container, full_path, start_range=0,
                                               end_range=bytes_count-1).content
@@ -173,3 +176,6 @@ class AzureBlobFileSystem(object):
         size = self.connection.get_blob_properties(container, full_path).properties.content_length
         return self.connection.get_blob_to_bytes(container, full_path, start_range=size-bytes_count,
                                               end_range=size-1).content
+
+    def exists(self, container, full_path):
+        return self.connection.exists(container, full_path)
