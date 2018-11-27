@@ -99,71 +99,77 @@ class AzureBlobReadableFile(object):
         self.fid.seek(0)
 
 class AzureBlobFileSystem(object):
-    def __init__(self, container, connection, **kwargs):
-        if not isinstance(connection, BlockBlobService):
-            raise TypeError("Argument connection needs to be of type azure.storage.blob.blockblobservice.BlockBlobService")
-        self.connection = connection
-        self.kwargs = kwargs
-        self.container = container
+    def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
+        account_name = account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
+        account_key = account_key or os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
+        sas_token = sas_token or os.environ.get("AZURE_BLOB_SAS_TOKEN")
+        connection_string = connection_string or os.environ.get("AZURE_BLOB_CONNECTION_STRING")
+        self.connection = BlockBlobService(account_name=account_name,
+                                           account_key=account_key,
+                                           sas_token=sas_token,
+                                           connection_string=connection_string,
+                                           protocol=storage_options.get("protocol"),
+                                           endpoint_suffix=storage_options.get("endpoint_suffix"),
+                                           custom_domain=storage_options.get("custom_domain"))
         self.sep = "/"
 
-    def ls(self, pattern=None):
+    def ls(self, container, pattern=None):
         return list(set(filter(lambda x: fnmatch.fnmatch(x, pattern) if pattern else x,
-                               map(lambda x: x.name, self.connection.list_blobs(self.container)))))
+                               map(lambda x: x.name, self.connection.list_blobs(container)))))
 
-    def mkdir(self, dir_name):
-        self.touch("{dir_name}/".format(dir_name=dir_name))
+    def mkdir(self, container, dir_name):
+        self.touch(container, "{dir_name}/".format(dir_name=dir_name))
 
-    def rm(self, full_path):
-        if self.connection.exists(self.container, full_path):
+    def rm(self, container, full_path):
+        if self.connection.exists(container, full_path):
             path_delete_lease = None
             try:
-                path_delete_lease = self.connection.acquire_blob_lease(self.container, full_path)
-                self.connection.delete_blob(self.container, full_path, lease_id=path_delete_lease)
+                path_delete_lease = self.connection.acquire_blob_lease(container, full_path)
+                self.connection.delete_blob(container, full_path, lease_id=path_delete_lease)
             except:
                 if path_delete_lease is not None:
-                    self.connection.release_blob_lease(self.container, full_path, path_delete_lease)
+                    self.connection.release_blob_lease(container, full_path, path_delete_lease)
         else:
             raise IOError(
-                "File '{file}' does not exist under container '{container}'".format(file=full_path, container=self.container))
+                "File '{file}' does not exist under container '{container}'".format(file=full_path, container=container))
 
-    def touch(self, full_path):
+    def touch(self, container, full_path):
         container_lease = None
         try:
-            container_lease = self.connection.acquire_container_lease(self.container)
-            self.connection.create_blob_from_text(self.container, full_path, "")
+            container_lease = self.connection.acquire_container_lease(container)
+            self.connection.create_blob_from_text(container, full_path, "")
         finally:
             if container_lease is not None:
-                self.connection.release_container_lease(self.container, container_lease)
+                self.connection.release_container_lease(container, container_lease)
         return full_path
 
-    def mv(self, src_path, dst_path):
+    def mv(self, container, src_path, dst_path):
         try:
-            self.cp(src_path, dst_path)
-            self.rm(src_path)
+            self.cp(container, src_path, dst_path)
+            self.rm(container, src_path)
             return True
         except:
-            self.rm(dst_path)
+            self.rm(container, dst_path)
             return False
 
-    def cp(self, full_src_path, full_dst_path):
+    def cp(self, container, full_src_path, full_dst_path):
         copy_container_lease = None
         try:
-            copy_container_lease = self.connection.acquire_container_lease(self.container)
-            self.connection.copy_blob(self.container, full_dst_path, self.connection.make_blob_url(self.container, full_src_path))
+            copy_container_lease = self.connection.acquire_container_lease(container)
+            self.connection.copy_blob(container, full_dst_path, self.connection.make_blob_url(container, full_src_path))
         finally:
             if copy_container_lease is not None:
-                self.connection.release_container_lease(self.container, copy_container_lease)
+                self.connection.release_container_lease(container, copy_container_lease)
 
-    def du(self):
+    def du(self, container):
         return { blob.name : blob.properties.content_length
-                 for blob in self.connection.list_blobs(self.container) }
+                 for blob in self.connection.list_blobs(container) }
 
-    def head(self, full_path, bytes_count):
-        return self.connection.get_blob_to_bytes(self.container, full_path, start_range=0,
+    def head(self, container, full_path, bytes_count):
+        return self.connection.get_blob_to_bytes(container, full_path, start_range=0,
                                               end_range=bytes_count-1).content
 
-    def tail(self, full_path, bytes_count):
-        size = self.connection.get_blob_properties(self.container, full_path).properties.content_length
-        return self.connection.get_blob_to_bytes(self.container, full_path, start_range=size-bytes_count,
+    def tail(self, container, full_path, bytes_count):
+        size = self.connection.get_blob_properties(container, full_path).properties.content_length
+        return self.connection.get_blob_to_bytes(container, full_path, start_range=size-bytes_count,
                                               end_range=size-1).content
