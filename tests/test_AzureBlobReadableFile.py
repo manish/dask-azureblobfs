@@ -27,29 +27,20 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
 
         self.connection = BlockBlobService(account_name=self.account_name, account_key=self.account_key)
 
-    def test_seek_whence_invalid(self):
-        with AzureBlobReadableFile(self.connection, self.container, self.text_blob_name) as fid:
-            with self.assertRaises(ValueError) as context:
-                fid.seek(0, 4)
-            with self.assertRaises(ValueError) as context:
-                fid.seek(0, -1)
-
     def test_seek_tell(self):
         with AzureBlobReadableFile(self.connection, self.container, self.text_blob_name) as fid:
             self.assertEqual(fid.tell(), 0)
             self.assertEqual(fid.seek(30), 30)
             self.assertEqual(fid.seek(30), 30)
-            with self.assertRaises(ValueError) as context:
-                fid.seek(-30)
 
     def test_text_read_seek(self):
         with AzureBlobReadableFile(self.connection, self.container, self.text_blob_name, mode='r') as fid:
-            self.assertEqual(fid.read(50), 'RowID,DateTime,TempOut,HiTemp,LowTemp,OutHum,DewPt')
-            self.assertEqual(fid.read(30), ',WindSpeed,WindDir,WindRun,HiS')
+            self.assertEqual(fid.read(50), b'RowID,DateTime,TempOut,HiTemp,LowTemp,OutHum,DewPt')
+            self.assertEqual(fid.read(30), b',WindSpeed,WindDir,WindRun,HiS')
             self.assertEqual(fid.seek(100), 100)
-            self.assertEqual(fid.read(30), ',HeatIndex,THWIndex,Bar,Rain,R')
+            self.assertEqual(fid.read(30), b',HeatIndex,THWIndex,Bar,Rain,R')
             self.assertEqual(fid.seek(50), 50)
-            self.assertEqual(fid.read(30), ',WindSpeed,WindDir,WindRun,HiS')
+            self.assertEqual(fid.read(30), b',WindSpeed,WindDir,WindRun,HiS')
 
     def test_binary_read_seek(self):
         expected_np_array = numpy.array([2, 34,  5,  3,  4])
@@ -76,6 +67,6 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
             open(local_file) as local_fid:
             for expected_line in local_fid:
                 actual_line = remote_fid.readline()
-                self.assertEqual(actual_line, expected_line,
+                self.assertEqual(actual_line.decode("utf-8") , expected_line,
                                  "\nError:\nActual:\n{actual_line}\nExpected:\n{expected_line}".format(
                                      actual_line=actual_line, expected_line=expected_line))

@@ -34,6 +34,7 @@ from azureblobfs.fs import AzureBlobReadableFile
 
 class DaskAzureBlobFileSystem(LocalFileSystem):
     protocol="abfs"
+    sep = "/"
     def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
         super(DaskAzureBlobFileSystem, self).__init__()
 
@@ -51,7 +52,8 @@ class DaskAzureBlobFileSystem(LocalFileSystem):
 
     def glob(self, path):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
-        return filter(lambda x: fnmatch.fnmatch(x.name, blob_pattern), self.connection.list_blobs(container))
+        return map(lambda x: "{}{}{}".format(container, self.sep, x.name),
+                   filter(lambda x: fnmatch.fnmatch(x.name, blob_pattern), self.connection.list_blobs(container)))
 
     def mkdirs(self, path, **kwargs):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
@@ -72,10 +74,11 @@ class DaskAzureBlobFileSystem(LocalFileSystem):
 
     @classmethod
     def split_container_blob(self, path):
-        index_sep = path.find("/")
-        if index_sep < 0:
-            raise Exception("The path provided is not in the format {protocol}://container/blob_pattern".format(
-                protocol=DaskAzureBlobFileSystem.protocol))
-        return path[:index_sep], path[index_sep+1:]
+        trimmed_path = path[1:] if path.startswith(self.sep) else path
+        index_sep = trimmed_path.find(self.sep)
+        if index_sep <= 0:
+            raise ValueError("The path provided is not in the correct\n Expected format: '{protocol}://account/container/blob_pattern'\nFound: '{path}'".format(
+                protocol=DaskAzureBlobFileSystem.protocol, path=path))
+        return trimmed_path[:index_sep], trimmed_path[index_sep+1:]
 
 dask.bytes.core._filesystems[DaskAzureBlobFileSystem.protocol] = DaskAzureBlobFileSystem

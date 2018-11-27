@@ -9,6 +9,8 @@ dask = "*"
 numpy = "*"
 azure-storage = "*"
 toolz = "*"
+pandas = "*"
+cloudpickle = "*"
 
 [dev-packages]
 ipython = "*"
