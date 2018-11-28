@@ -13,6 +13,7 @@ import numpy
 
 from azureblobfs.dask import DaskAzureBlobFileSystem
 from azureblobfs.dask.mapping import AzureBlobMap
+from azureblobfs.utils import generate_guid
 
 
 class AzureBlobMapTest(unittest.TestCase):
@@ -24,7 +25,7 @@ class AzureBlobMapTest(unittest.TestCase):
         self.account_key = os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
         warnings.simplefilter("ignore", ResourceWarning)
         self.dask_fs = DaskAzureBlobFileSystem(self.account_name, self.account_key)
-        self.azure_map = AzureBlobMap("{}/{}".format(self.container, "samples"), self.dask_fs)
+        self.azure_map = AzureBlobMap("{}/{}".format(self.container, generate_guid()), self.dask_fs)
         self.azure_map.clear()
 
     def test_AzureBlobMap_ctor(self):
