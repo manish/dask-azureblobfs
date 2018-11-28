@@ -14,6 +14,9 @@ install: docker-compose build
 jobs:
   include:
     - stage: tests
-      # Command to run tests, e.g. python setup.py test
       script: ./drun_app pytest
+    - stage: flake8
+      script: ./drun_app make lint
+    - stage: docs
+      script: ./drun_app make docs
 

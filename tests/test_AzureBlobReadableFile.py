@@ -14,6 +14,7 @@ import numpy
 from azureblobfs.fs import AzureBlobReadableFile
 from azure.storage.blob.blockblobservice import BlockBlobService
 
+
 class AzureBlobReadableTextFileTest(unittest.TestCase):
     account_name = "e29"
     container = "azure-blob-filesystem"
@@ -43,7 +44,7 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
             self.assertEqual(fid.read(30), b',WindSpeed,WindDir,WindRun,HiS')
 
     def test_binary_read_seek(self):
-        expected_np_array = numpy.array([2, 34,  5,  3,  4])
+        expected_np_array = numpy.array([2, 34, 5, 3, 4])
         with AzureBlobReadableFile(self.connection, self.container, self.binary_blob_name) as fid:
             self.assertEqual(fid.tell(), 0)
             for size in [None, 248, 5000]:
@@ -53,7 +54,8 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
                         tmp_f.write(fid.read(size))
                         tmp_f.seek(0)
                         found_np_array = numpy.load(tmp_f)
-                        self.assertTrue(numpy.array_equal(found_np_array, expected_np_array),
+                        self.assertTrue(
+                            numpy.array_equal(found_np_array, expected_np_array),
                             "Expected numpy array to be {expected} but found {found}".format(
                                 expected=expected_np_array, found=found_np_array))
 
@@ -64,9 +66,9 @@ class AzureBlobReadableTextFileTest(unittest.TestCase):
         urllib.request.urlretrieve("https://e29.blob.core.windows.net/public/Local_Weather_Data.csv", local_file)
 
         with AzureBlobReadableFile(self.connection, self.container, self.text_blob_name, mode='r') as remote_fid,\
-            open(local_file) as local_fid:
+                open(local_file) as local_fid:
             for expected_line in local_fid:
                 actual_line = remote_fid.readline()
-                self.assertEqual(actual_line.decode("utf-8") , expected_line,
+                self.assertEqual(actual_line.decode("utf-8"), expected_line,
                                  "\nError:\nActual:\n{actual_line}\nExpected:\n{expected_line}".format(
                                      actual_line=actual_line, expected_line=expected_line))

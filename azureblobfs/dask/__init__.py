@@ -22,19 +22,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import os
 import fnmatch
-
-from azure.storage.blob.blockblobservice import BlockBlobService
 
 import dask.bytes.core
 from dask.bytes.local import LocalFileSystem
 
 from azureblobfs.fs import AzureBlobReadableFile, AzureBlobFileSystem
 
+
 class DaskAzureBlobFileSystem(AzureBlobFileSystem, LocalFileSystem):
-    protocol="abfs"
+    protocol = "abfs"
     sep = "/"
+
     def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
         super(DaskAzureBlobFileSystem, self).__init__(account_name=account_name, account_key=account_key, sas_token=sas_token, connection_string=connection_string, storage_options=storage_options)
 
@@ -67,10 +66,11 @@ class DaskAzureBlobFileSystem(AzureBlobFileSystem, LocalFileSystem):
         if index_sep <= 0:
             raise ValueError("The path provided is not in the correct\n Expected format: '{protocol}://account/container/blob_pattern'\nFound: '{path}'".format(
                 protocol=DaskAzureBlobFileSystem.protocol, path=path))
-        return trimmed_path[:index_sep], trimmed_path[index_sep+1:]
+        return trimmed_path[:index_sep], trimmed_path[index_sep + 1:]
 
     @classmethod
     def join_container_blob(self, container, blob):
         return "{container}{sep}{blob}".format(container=container, sep=DaskAzureBlobFileSystem.sep, blob=blob)
+
 
 dask.bytes.core._filesystems[DaskAzureBlobFileSystem.protocol] = DaskAzureBlobFileSystem

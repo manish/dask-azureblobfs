@@ -12,6 +12,7 @@ import dask.dataframe as dd
 
 from azureblobfs.dask import DaskAzureBlobFileSystem
 
+
 class DaskAzureBlobFileSystemTest(unittest.TestCase):
     account_name = "e29"
     container = "public"
@@ -21,8 +22,9 @@ class DaskAzureBlobFileSystemTest(unittest.TestCase):
         self.account_name = self.account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
         self.account_key = os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
         warnings.simplefilter("ignore", ResourceWarning)
-        self.url = "{protocol}://{path}".format(protocol=DaskAzureBlobFileSystem.protocol,
-            path=DaskAzureBlobFileSystem.sep.join([self.account_name, self.container, self.blob_pattern]))
+        self.url = "{protocol}://{path}".format(
+            protocol=DaskAzureBlobFileSystem.protocol, path=DaskAzureBlobFileSystem.sep.join(
+                [self.account_name, self.container, self.blob_pattern]))
         self.storage_options = {"account_name": self.account_name, "account_key": self.account_key}
 
     def test_partitions_shape(self):

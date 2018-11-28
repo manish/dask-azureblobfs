@@ -25,6 +25,7 @@
 import datetime
 import hashlib
 
+
 def generate_guid(size=20):
     m = hashlib.sha512()
     m.update(str(datetime.datetime.utcnow()).encode())

@@ -27,6 +27,7 @@ from collections import MutableMapping
 
 from azureblobfs.dask import DaskAzureBlobFileSystem
 
+
 class AzureBlobMap(MutableMapping):
     def __init__(self, location, fs):
         if not isinstance(fs, DaskAzureBlobFileSystem):
@@ -42,7 +43,7 @@ class AzureBlobMap(MutableMapping):
     def get(self, key, default_value=None):
         try:
             return self[key]
-        except:
+        except Exception:
             return default_value
 
     def items(self):
@@ -94,14 +95,14 @@ class AzureBlobMap(MutableMapping):
         container, blob_prefix = DaskAzureBlobFileSystem.split_container_blob(self.location)
         blob_path = DaskAzureBlobFileSystem.join_container_blob(blob_prefix, key)
         if not self.fs.exists(container, blob_path):
-            raise KeyError (key)
+            raise KeyError(key)
         self.fs.rm(container, blob_path)
 
     def __getitem__(self, key):
         full_path = self.fs.join_container_blob(self.location, key)
         container, blob_path = DaskAzureBlobFileSystem.split_container_blob(full_path)
         if not self.fs.exists(container, blob_path):
-            raise KeyError (key)
+            raise KeyError(key)
         with self.fs.open(full_path) as f:
             return pickle.loads(f.read())
 

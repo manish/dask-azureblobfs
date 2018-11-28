@@ -13,6 +13,8 @@ import numpy
 
 from azureblobfs.dask import DaskAzureBlobFileSystem
 from azureblobfs.dask.mapping import AzureBlobMap
+from azureblobfs.utils import generate_guid
+
 
 class AzureBlobMapTest(unittest.TestCase):
     account_name = "e29"
@@ -23,17 +25,17 @@ class AzureBlobMapTest(unittest.TestCase):
         self.account_key = os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
         warnings.simplefilter("ignore", ResourceWarning)
         self.dask_fs = DaskAzureBlobFileSystem(self.account_name, self.account_key)
-        self.azure_map = AzureBlobMap ("{}/{}".format(self.container, "samples"), self.dask_fs)
+        self.azure_map = AzureBlobMap("{}/{}".format(self.container, generate_guid()), self.dask_fs)
         self.azure_map.clear()
 
     def test_AzureBlobMap_ctor(self):
-        with self.assertRaises(TypeError) as context:
-            x = AzureBlobMap("magic", self.account_key)
+        with self.assertRaises(TypeError):
+            AzureBlobMap("magic", self.account_key)
 
     def test_get(self):
         self._populate_with_str_time_np()
         self.assertEqual(self.azure_map.get("first"), "First item")
-        self.assertTrue(numpy.array_equal(self.azure_map.get("fourth"), numpy.array([1,2,3])))
+        self.assertTrue(numpy.array_equal(self.azure_map.get("fourth"), numpy.array([1, 2, 3])))
         self.assertEqual(self.azure_map.get("unknown", "Not found"), "Not found")
 
     def test_clear(self):
@@ -54,11 +56,11 @@ class AzureBlobMapTest(unittest.TestCase):
 
     def test_pop_not_present_no_default(self):
         self.azure_map.clear()
-        with self.assertRaises(KeyError) as context:
+        with self.assertRaises(KeyError):
             self.azure_map.pop("whatever")
 
     def test_keys(self):
-        self._populate_with_str_time_np ()
+        self._populate_with_str_time_np()
         all_keys = self.azure_map.keys()
         self.assertIn("first", all_keys)
         self.assertIn("second", all_keys)
@@ -88,7 +90,7 @@ class AzureBlobMapTest(unittest.TestCase):
 
     def test_del_not_present(self):
         self._populate_with_str_time_np()
-        with self.assertRaises(KeyError) as context:
+        with self.assertRaises(KeyError):
             del self.azure_map["some"]
 
     def test_setdefault_present(self):
@@ -101,7 +103,7 @@ class AzureBlobMapTest(unittest.TestCase):
         self.assertEqual(self.azure_map["abc"], "something")
 
     def test_popitem_empty(self):
-        with self.assertRaises(KeyError) as context:
+        with self.assertRaises(KeyError):
             self.azure_map.popitem()
 
     def test_popitem(self):
@@ -117,6 +119,4 @@ class AzureBlobMapTest(unittest.TestCase):
         time.sleep(1)
         self.azure_map["third"] = datetime.datetime.utcnow()
         time.sleep(1)
-        self.azure_map["fourth"] = numpy.array([1,2,3])
-
-
+        self.azure_map["fourth"] = numpy.array([1, 2, 3])
