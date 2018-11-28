@@ -9,7 +9,7 @@ import warnings
 
 from azureblobfs.fs import AzureBlobFileSystem
 from azureblobfs.utils import generate_guid
-from azure.storage.blob.blockblobservice import BlockBlobService
+
 
 class AzureBlobFileSystemTest(unittest.TestCase):
     account_name = "e29"
