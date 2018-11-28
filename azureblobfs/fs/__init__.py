@@ -99,130 +99,83 @@ class AzureBlobReadableFile(object):
         self.fid.seek(0)
 
 class AzureBlobFileSystem(object):
-    def __init__(self, container, service, **kwargs):
-        if not isinstance(service, BlockBlobService):
-            raise TypeError("service needs to be of type azure.storage.blob.blockblobservice.BlockBlobService")
-        self.service = service
-        self.kwargs = kwargs
-        self.container = container
-        self.cwd = ""
+    def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
+        account_name = account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
+        account_key = account_key or os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
+        sas_token = sas_token or os.environ.get("AZURE_BLOB_SAS_TOKEN")
+        connection_string = connection_string or os.environ.get("AZURE_BLOB_CONNECTION_STRING")
+        self.connection = BlockBlobService(account_name=account_name,
+                                           account_key=account_key,
+                                           sas_token=sas_token,
+                                           connection_string=connection_string,
+                                           protocol=storage_options.get("protocol"),
+                                           endpoint_suffix=storage_options.get("endpoint_suffix"),
+                                           custom_domain=storage_options.get("custom_domain"))
         self.sep = "/"
 
-    def ls(self, pattern=None):
-        subpath = self._ls_subfolder(self.service.list_blobs(self.container))
-        if not pattern:
-            return set(map(lambda x: x[:x.find("/")+1] if x.find("/") >=0 else x, subpath))
-        else:
-            return set(filter(lambda x: fnmatch.fnmatch(x, pattern), subpath))
+    def ls(self, container, pattern=None):
+        return list(set(filter(lambda x: fnmatch.fnmatch(x, pattern) if pattern else x,
+                               map(lambda x: x.name, self.connection.list_blobs(container)))))
 
-    def mkdir(self, dir_name):
-        self.touch("{dir_name}/".format(dir_name=dir_name))
+    def mkdir(self, container, dir_name):
+        self.touch(container, "{dir_name}/".format(dir_name=dir_name))
 
-    def cd(self, dir_name=None):
-        if dir_name == None:
-            self.cwd = ""
-        elif "{dir_name}{sep}".format(dir_name=dir_name, sep=self.sep) in self.ls():
-            self.cwd = dir_name if self.cwd == "" else "{cwd}{sep}{dir_name}".format(cwd = self.cwd, sep=self.sep, dir_name=dir_name)
-        else:
-            raise IOError("Directory '{dir_name}' does not exist under '{cwd}{sep}'".format(dir_name=dir_name, cwd=self.cwd, sep=self.sep))
-
-    def rm(self, file_name):
-        full_path = self._create_full_path(file_name)
-        if self.service.exists(self.container, full_path):
+    def rm(self, container, full_path):
+        if self.connection.exists(container, full_path):
             path_delete_lease = None
             try:
-                path_delete_lease = self.service.acquire_blob_lease(self.container, full_path)
-                self.service.delete_blob(self.container, full_path, lease_id=path_delete_lease)
+                path_delete_lease = self.connection.acquire_blob_lease(container, full_path)
+                self.connection.delete_blob(container, full_path, lease_id=path_delete_lease)
             except:
                 if path_delete_lease is not None:
-                    self.service.release_blob_lease(self.container, full_path, path_delete_lease)
+                    self.connection.release_blob_lease(container, full_path, path_delete_lease)
         else:
             raise IOError(
-                "File '{file}' does not exist under '{cwd}{sep}'".format(file=file_name, cwd=self.cwd, sep=self.sep))
+                "File '{file}' does not exist under container '{container}'".format(file=full_path, container=container))
 
-    def touch(self, file_name):
-        full_path = self._create_full_path(file_name)
+    def touch(self, container, full_path):
         container_lease = None
         try:
-            container_lease = self.service.acquire_container_lease(self.container)
-            self.service.create_blob_from_text(self.container, full_path, "")
+            container_lease = self.connection.acquire_container_lease(container)
+            self.connection.create_blob_from_text(container, full_path, "")
         finally:
             if container_lease is not None:
-                self.service.release_container_lease(self.container, container_lease)
+                self.connection.release_container_lease(container, container_lease)
         return full_path
 
-    def mv(self, src_path, dst_path):
+    def mv(self, container, src_path, dst_path):
         try:
-            self.cp(src_path, dst_path)
-            self.rm(src_path)
+            self.cp(container, src_path, dst_path)
+            self.rm(container, src_path)
             return True
         except:
-            self.rm(dst_path)
+            self.rm(container, dst_path)
             return False
 
-    def cp(self, src_path, dst_path):
+    def cp(self, container, full_src_path, full_dst_path):
         copy_container_lease = None
-        full_src_path = self._create_full_path(src_path)
-        full_dst_path = self._create_full_path(dst_path)
         try:
-            copy_container_lease = self.service.acquire_container_lease(self.container)
-            self.service.copy_blob(self.container, full_dst_path, self.service.make_blob_url(self.container, full_src_path))
+            copy_container_lease = self.connection.acquire_container_lease(container)
+            self.connection.copy_blob(container, full_dst_path, self.connection.make_blob_url(container, full_src_path))
         finally:
             if copy_container_lease is not None:
-                self.service.release_container_lease(self.container, copy_container_lease)
+                self.connection.release_container_lease(container, copy_container_lease)
 
-    def pwd(self):
-        return self.cwd
-
-    def du(self):
+    def du(self, container):
         return { blob.name : blob.properties.content_length
-                 for blob in self.service.list_blobs(self.container) }
+                 for blob in self.connection.list_blobs(container) }
 
-    def head(self, path, bytes_count):
-        return self.service.get_blob_to_bytes(self.container, self._create_full_path(path), start_range=0,
+    def last_modified(self, container, full_path):
+        return self.connection.get_blob_properties(container, full_path).properties.last_modified
+
+    def head(self, container, full_path, bytes_count):
+        return self.connection.get_blob_to_bytes(container, full_path, start_range=0,
                                               end_range=bytes_count-1).content
 
-    def tail(self, path, bytes_count):
-        full_path = self._create_full_path(path)
-        size = self.service.get_blob_properties(self.container, full_path).properties.content_length
-        return self.service.get_blob_to_bytes(self.container, full_path, start_range=size-bytes_count,
+    def tail(self, container, full_path, bytes_count):
+        size = self.connection.get_blob_properties(container, full_path).properties.content_length
+        return self.connection.get_blob_to_bytes(container, full_path, start_range=size-bytes_count,
                                               end_range=size-1).content
 
-    def _ls_subfolder(self, blobs):
-        subpath = map(lambda blob: blob.replace(self.cwd, ""), [item.name for item in blobs])
-        return map(lambda blob: blob[1:] if blob.startswith(self.sep) else blob, subpath)
-
-    def _create_full_path(self, file_name):
-        return file_name if self.cwd == "" else "{cwd}{sep}{path}".format(cwd=self.cwd, sep=self.sep, path=file_name)
-
-class AzureBlobMap(object):
-    def __init__(self, location, fs):
-        self.location = location
-        self.fs = fs
-
-    def clear(self):
-        pass
-
-    def get(self, key, default_value=None):
-        pass
-
-    def items(self):
-        pass
-
-    def keys(self):
-        pass
-
-    def pop(self, key, default_value=None):
-        pass
-
-    def popitem(self):
-        pass
-
-    def setdefault(self, key, default_value=None):
-        pass
-
-    def update(self, key, **value):
-        pass
-
-    def values(self):
-        pass
+    def exists(self, container, full_path):
+        return self.connection.exists(container, full_path)

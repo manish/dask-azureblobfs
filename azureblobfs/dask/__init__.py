@@ -30,30 +30,18 @@ from azure.storage.blob.blockblobservice import BlockBlobService
 import dask.bytes.core
 from dask.bytes.local import LocalFileSystem
 
-from azureblobfs.fs import AzureBlobReadableFile
+from azureblobfs.fs import AzureBlobReadableFile, AzureBlobFileSystem
 
-class DaskAzureBlobFileSystem(LocalFileSystem):
+class DaskAzureBlobFileSystem(AzureBlobFileSystem, LocalFileSystem):
     protocol="abfs"
     sep = "/"
     def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
-        super(DaskAzureBlobFileSystem, self).__init__()
-
-        account_name = account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
-        account_key = account_key or os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
-        sas_token = sas_token or os.environ.get("AZURE_BLOB_SAS_TOKEN")
-        connection_string = connection_string or os.environ.get("AZURE_BLOB_CONNECTION_STRING")
-        self.connection = BlockBlobService(account_name=account_name,
-                                           account_key=account_key,
-                                           sas_token=sas_token,
-                                           connection_string=connection_string,
-                                           protocol=storage_options.get("protocol"),
-                                           endpoint_suffix=storage_options.get("endpoint_suffix"),
-                                           custom_domain=storage_options.get("custom_domain"))
+        super(DaskAzureBlobFileSystem, self).__init__(account_name=account_name, account_key=account_key, sas_token=sas_token, connection_string=connection_string, storage_options=storage_options)
 
     def glob(self, path):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
-        return map(lambda x: "{}{}{}".format(container, self.sep, x.name),
-                   filter(lambda x: fnmatch.fnmatch(x.name, blob_pattern), self.connection.list_blobs(container)))
+        return map(lambda x: DaskAzureBlobFileSystem.join_container_blob(container, x.name),
+                   filter(lambda x: fnmatch.fnmatch(x.name, blob_pattern) or x.name.startswith(blob_pattern), self.connection.list_blobs(container)))
 
     def mkdirs(self, path, **kwargs):
         container, blob_pattern = DaskAzureBlobFileSystem.split_container_blob(path)
@@ -80,5 +68,9 @@ class DaskAzureBlobFileSystem(LocalFileSystem):
             raise ValueError("The path provided is not in the correct\n Expected format: '{protocol}://account/container/blob_pattern'\nFound: '{path}'".format(
                 protocol=DaskAzureBlobFileSystem.protocol, path=path))
         return trimmed_path[:index_sep], trimmed_path[index_sep+1:]
+
+    @classmethod
+    def join_container_blob(self, container, blob):
+        return "{container}{sep}{blob}".format(container=container, sep=DaskAzureBlobFileSystem.sep, blob=blob)
 
 dask.bytes.core._filesystems[DaskAzureBlobFileSystem.protocol] = DaskAzureBlobFileSystem
