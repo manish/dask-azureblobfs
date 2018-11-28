@@ -17,5 +17,3 @@ except DistributionNotFound:
     __version__ = get_version(
         os.path.dirname(os.path.dirname(__file__))
     )
-
-from .dask import DaskAzureBlobFileSystem

@@ -22,7 +22,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import io
 import os
 import tempfile
 import fnmatch
@@ -31,8 +30,10 @@ from azure.storage.blob.blockblobservice import BlockBlobService
 
 from azureblobfs.utils import generate_guid
 
+
 class AzureBlobReadableFile(object):
     allowed_whence_values = (0, 1, 2)
+
     def __init__(self, connection, container, blob_path, mode='rb', **kwargs):
         self.connection = connection
         self.container = container
@@ -98,6 +99,7 @@ class AzureBlobReadableFile(object):
         self.fid = open(self.tmp_path, "rb")
         self.fid.seek(0)
 
+
 class AzureBlobFileSystem(object):
     def __init__(self, account_name=None, account_key=None, sas_token=None, connection_string=None, **storage_options):
         account_name = account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
@@ -162,20 +164,20 @@ class AzureBlobFileSystem(object):
                 self.connection.release_container_lease(container, copy_container_lease)
 
     def du(self, container):
-        return { blob.name : blob.properties.content_length
-                 for blob in self.connection.list_blobs(container) }
+        return {blob.name: blob.properties.content_length
+                for blob in self.connection.list_blobs(container)}
 
     def last_modified(self, container, full_path):
         return self.connection.get_blob_properties(container, full_path).properties.last_modified
 
     def head(self, container, full_path, bytes_count):
-        return self.connection.get_blob_to_bytes(container, full_path, start_range=0,
-                                              end_range=bytes_count-1).content
+        return self.connection.get_blob_to_bytes(
+            container, full_path, start_range=0, end_range=bytes_count - 1).content
 
     def tail(self, container, full_path, bytes_count):
         size = self.connection.get_blob_properties(container, full_path).properties.content_length
-        return self.connection.get_blob_to_bytes(container, full_path, start_range=size-bytes_count,
-                                              end_range=size-1).content
+        return self.connection.get_blob_to_bytes(
+            container, full_path, start_range=size - bytes_count, end_range=size - 1).content
 
     def exists(self, container, full_path):
         return self.connection.exists(container, full_path)
