@@ -12,9 +12,9 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ 'dask', 'azure-storage-blob' ]
+requirements = [ 'dask', 'azure-storage-blob', ]
 
-setup_requirements = ['pytest-runner', 'flake8', 'pytest-runner', 'pytest-cov', 'numpy', 'pandas', 'sphinx', 'setuptools', 'cloudpickle', 'toolz', 'azure-storage-blob' ]
+setup_requirements = ['pytest-runner', 'flake8', 'pytest-runner', 'pytest-cov', 'numpy', 'pandas', 'sphinx', 'setuptools', 'cloudpickle', 'toolz', 'azure-storage-blob', 'setuptools_scm' ]
 
 test_requirements = ['pytest', ]
 
