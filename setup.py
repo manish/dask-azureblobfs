@@ -14,7 +14,7 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [ 'dask', 'azure-storage-blob' ]
 
-setup_requirements = ['pytest-runner', ]
+setup_requirements = ['pytest-runner', 'flake8', 'pytest-runner', 'pytest-cov', 'numpy', 'pandas', 'sphinx', 'setuptools', 'cloudpickle', 'toolz', 'azure-storage-blob' ]
 
 test_requirements = ['pytest', ]
 
