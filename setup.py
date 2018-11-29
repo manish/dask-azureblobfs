@@ -4,6 +4,7 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
+from azureblobfs import __name__ as package_name
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -35,7 +36,7 @@ setup(
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='azureblobfs',
-    name='dask-azureblobfs',
+    name=package_name,
     packages=find_packages(include=['azureblobfs']),
     setup_requires=setup_requirements,
     test_suite='tests',

@@ -7,6 +7,7 @@ from pkg_resources import get_distribution, DistributionNotFound
 
 __author__ = """Manish Sinha"""
 __email__ = 'masinha@microsoft.com'
+__name__ = "dask-azureblobfs"
 
 try:
     __version__ = get_distribution(__name__).version
