@@ -4,6 +4,7 @@
 """The setup script."""
 
 from setuptools import setup, find_packages
+from azureblobfs import __name__ as package_name
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -11,9 +12,9 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ 'dask', 'azure-storage-blob' ]
+requirements = [ 'dask', 'azure-storage-blob', ]
 
-setup_requirements = ['pytest-runner', ]
+setup_requirements = ['pytest-runner', 'flake8', 'pytest-runner', 'pytest-cov', 'numpy', 'pandas', 'sphinx', 'setuptools', 'cloudpickle', 'toolz', 'azure-storage-blob', 'setuptools_scm' ]
 
 test_requirements = ['pytest', ]
 
@@ -35,7 +36,7 @@ setup(
     long_description=readme + '\n\n' + history,
     include_package_data=True,
     keywords='azureblobfs',
-    name='dask-azureblobfs',
+    name=package_name,
     packages=find_packages(include=['azureblobfs']),
     setup_requires=setup_requirements,
     test_suite='tests',

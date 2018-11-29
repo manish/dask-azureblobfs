@@ -4,22 +4,21 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pytest-cov = "*"
 dask = "*"
-numpy = "*"
 azure-storage = "*"
-toolz = "*"
-pandas = "*"
-cloudpickle = "*"
-"flake8" = "*"
 
 [dev-packages]
 ipython = "*"
 pytest = "*"
 pytest-runner = "*"
-pytest-cov = "*"
 sphinx = "*"
 setuptools-scm = "*"
+"flake8" = "*"
+cloudpickle = "*"
+numpy = "*"
+pandas = "*"
+toolz = "*"
+pytest-cov = "*"
 
 [requires]
 python_version = "3.6"
