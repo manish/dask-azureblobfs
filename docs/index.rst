@@ -1,5 +1,5 @@
 Welcome to Dask Azure Blob FileSystem's documentation!
-======================================
+=======================================================
 
 .. toctree::
    :maxdepth: 2

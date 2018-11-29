@@ -54,7 +54,7 @@ lint: ## check style with flake8
 	flake8 --ignore=E501,E722 azureblobfs tests
 
 test: ## run tests quickly with the default Python
-	py.test
+	pytest
 
 test-all: ## run tests on every Python version with tox
 	tox
