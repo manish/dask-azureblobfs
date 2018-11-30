@@ -7,6 +7,10 @@ Azure Blob Storage Backend for Dask
 .. image:: https://travis-ci.org/manish/dask-azureblobfs.svg?branch=master
     :target: https://travis-ci.org/manish/dask-azureblobfs
 
+.. image:: https://readthedocs.org/projects/dask-azureblobfs/badge/?version=latest
+:target: https://dask-azureblobfs.readthedocs.io/en/latest/?badge=latest
+:alt: Documentation Status
+
 Features
 --------
 
