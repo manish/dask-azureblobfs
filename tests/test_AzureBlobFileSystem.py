@@ -21,7 +21,7 @@ class AzureBlobFileSystemTest(unittest.TestCase):
         try:
             warnings.simplefilter("ignore", ResourceWarning)
         except:
-            pass #python2.x
+            pass
 
     def test_ls(self):
         folder_list = self.fs.ls(self.container)

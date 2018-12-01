@@ -26,7 +26,7 @@ class AzureBlobMapTest(unittest.TestCase):
         try:
             warnings.simplefilter("ignore", ResourceWarning)
         except:
-            pass #python2.x
+            pass
 
         self.dask_fs = DaskAzureBlobFileSystem(self.account_name, self.account_key)
         self.azure_map = AzureBlobMap("{}/{}".format(self.container, generate_guid()), self.dask_fs)

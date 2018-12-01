@@ -27,7 +27,7 @@ class DaskAzureBlobFileSystemTest(unittest.TestCase):
         try:
             warnings.simplefilter("ignore", ResourceWarning)
         except:
-            pass #python2.x
+            pass
         self.url = "{protocol}://{path}".format(
             protocol=DaskAzureBlobFileSystem.protocol, path=DaskAzureBlobFileSystem.sep.join(
                 [self.account_name, self.container, self.blob_pattern]))

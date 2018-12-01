@@ -21,7 +21,7 @@ class SplitContainerBlobTest(unittest.TestCase):
         try:
             warnings.simplefilter("ignore", ResourceWarning)
         except:
-            pass #python2.x
+            pass
 
     def test_simple_scenario_success(self):
         container, blob = DaskAzureBlobFileSystem.split_container_blob("{container}/{blob_name}".format(
@@ -54,7 +54,7 @@ class DaskAzureBlobFileSystemTest(unittest.TestCase):
         try:
             warnings.simplefilter("ignore", ResourceWarning)
         except:
-            pass #python2.x
+            pass
 
     def test_glob(self):
         all_files = [file for file in self.fs.glob("{container_name}/*.csv".format(container_name=self.container_name))]

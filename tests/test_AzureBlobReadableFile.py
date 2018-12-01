@@ -30,7 +30,7 @@ class AzureBlobReadableTextFileTest(TestCase):
         try:
             warnings.simplefilter("ignore", ResourceWarning)
         except:
-            pass #python2.x
+            pass
 
         self.connection = BlockBlobService(account_name=self.account_name, account_key=self.account_key)
 
