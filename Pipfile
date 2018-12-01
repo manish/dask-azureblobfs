@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 dask = "*"
 azure-storage = "*"
+"unittest2" = "*"
 
 [dev-packages]
 ipython = "*"
