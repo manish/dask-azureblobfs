@@ -23,7 +23,11 @@ class AzureBlobMapTest(unittest.TestCase):
     def setUp(self):
         self.account_name = self.account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
         self.account_key = os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
-        warnings.simplefilter("ignore", ResourceWarning)
+        try:
+            warnings.simplefilter("ignore", ResourceWarning)
+        except:
+            pass #python2.x
+
         self.dask_fs = DaskAzureBlobFileSystem(self.account_name, self.account_key)
         self.azure_map = AzureBlobMap("{}/{}".format(self.container, generate_guid()), self.dask_fs)
         self.azure_map.clear()

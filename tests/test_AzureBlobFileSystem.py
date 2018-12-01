@@ -18,7 +18,10 @@ class AzureBlobFileSystemTest(unittest.TestCase):
     def setUp(self):
         self.account_key = os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
         self.fs = AzureBlobFileSystem(self.account_name, self.account_key)
-        warnings.simplefilter("ignore", ResourceWarning)
+        try:
+            warnings.simplefilter("ignore", ResourceWarning)
+        except:
+            pass #python2.x
 
     def test_ls(self):
         folder_list = self.fs.ls(self.container)

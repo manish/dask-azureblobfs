@@ -18,7 +18,10 @@ class SplitContainerBlobTest(unittest.TestCase):
         self.container = generate_guid()
         self.subfolder = generate_guid(5)
         self.blob_name = generate_guid(10)
-        warnings.simplefilter("ignore", ResourceWarning)
+        try:
+            warnings.simplefilter("ignore", ResourceWarning)
+        except:
+            pass #python2.x
 
     def test_simple_scenario_success(self):
         container, blob = DaskAzureBlobFileSystem.split_container_blob("{container}/{blob_name}".format(
@@ -48,7 +51,10 @@ class DaskAzureBlobFileSystemTest(unittest.TestCase):
 
     def setUp(self):
         self.fs = DaskAzureBlobFileSystem(account_name=self.account_name)
-        warnings.simplefilter("ignore", ResourceWarning)
+        try:
+            warnings.simplefilter("ignore", ResourceWarning)
+        except:
+            pass #python2.x
 
     def test_glob(self):
         all_files = [file for file in self.fs.glob("{container_name}/*.csv".format(container_name=self.container_name))]
