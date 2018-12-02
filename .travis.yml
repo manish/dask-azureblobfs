@@ -5,10 +5,10 @@ language: python
 services:
     - docker
 python:
-  - 3.6
+  - 3.7
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
-install: docker-compose build
+install: docker-compose build && pip install tox
 
 # Command to run tests, e.g. python setup.py test
 jobs:
