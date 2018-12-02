@@ -6,8 +6,6 @@ name = "pypi"
 [packages]
 dask = "*"
 azure-storage = "*"
-"unittest2" = "*"
-tox = "*"
 
 [dev-packages]
 ipython = "*"
@@ -20,7 +18,7 @@ cloudpickle = "*"
 numpy = "*"
 pandas = "*"
 toolz = "*"
-pytest-cov = "*"
+"unittest2" = "*"
 
 [requires]
 python_version = "3.6"
