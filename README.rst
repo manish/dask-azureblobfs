@@ -16,9 +16,9 @@ Features
 
 * Supports dask when your data files are stored in the cloud.
 
-    * Import `DaskAzureBlobFileSystem`
+  * Import `DaskAzureBlobFileSystem`
 
-    * Use `abfs://` as protocol prefix and you are good to do.
+  * Use `abfs://` as protocol prefix and you are good to do.
 
 * For authentication, please read more on :ref:`Usage`.
 
