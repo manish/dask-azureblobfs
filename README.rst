@@ -20,7 +20,7 @@ Features
 
   * Use `abfs://` as protocol prefix and you are good to do.
 
-* For authentication, please read more on :ref:`Usage`.
+* For authentication, please read more on Usage_.
 
 * Support for key-value storage which is backed by azure storage. Create an instance of `AzureBlobMap`
 
@@ -29,5 +29,6 @@ Credits
 
 This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
 
+.. _Usage: https://dask-azureblobfs.readthedocs.io/en/latest/usage.html
 .. _Cookiecutter: https://github.com/audreyr/cookiecutter
 .. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
