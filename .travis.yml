@@ -6,9 +6,7 @@ language: python
 services:
     - docker
 python:
-  - "3.6"
-  - "2.7"
-  - "3.7-dev"
+    - 3.6
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: docker-compose build && pip install tox
@@ -17,9 +15,9 @@ install: docker-compose build && pip install tox
 jobs:
   include:
     - stage: Tests
-      script: tox -e py27,py36,py37
+      script: ./drun_app pytest
     - stage: Linting - flake8
-      script: ./drun_app tox -e flake
+      script: ./drun_app make lint
     - stage: Docs
       script: ./drun_app make docs
     - stage: packaging and Release
