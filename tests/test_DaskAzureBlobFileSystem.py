@@ -6,7 +6,10 @@
 import os
 import unittest
 import warnings
-import urllib.request
+try:
+    from urllib.request import urlretrieve
+except:
+    from urllib import urlretrieve
 
 import dask.dataframe as dd
 
@@ -21,7 +24,10 @@ class DaskAzureBlobFileSystemTest(unittest.TestCase):
     def setUp(self):
         self.account_name = self.account_name or os.environ.get("AZURE_BLOB_ACCOUNT_NAME")
         self.account_key = os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
-        warnings.simplefilter("ignore", ResourceWarning)
+        try:
+            warnings.simplefilter("ignore", ResourceWarning)
+        except:
+            pass
         self.url = "{protocol}://{path}".format(
             protocol=DaskAzureBlobFileSystem.protocol, path=DaskAzureBlobFileSystem.sep.join(
                 [self.account_name, self.container, self.blob_pattern]))
@@ -38,7 +44,7 @@ class DaskAzureBlobFileSystemTest(unittest.TestCase):
         local_file = os.path.join(os.getcwd(), "tests/testdata/test_first_337040.csv")
         if not os.path.exists(os.path.dirname(local_file)):
             os.mkdir(os.path.dirname(local_file))
-        urllib.request.urlretrieve("https://e29.blob.core.windows.net/public/test_first_337040.csv", local_file)
+        urlretrieve("https://e29.blob.core.windows.net/public/test_first_337040.csv", local_file)
 
         unified_data = dd.read_csv(local_file)
         split_data = dd.read_csv(self.url, storage_options=self.storage_options)

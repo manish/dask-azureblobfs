@@ -22,6 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import sys
 import os
 import tempfile
 import fnmatch
@@ -51,6 +52,8 @@ class AzureBlobReadableFile(object):
         self._open()
 
     def read(self, length=None):
+        if length is None and sys.version_info < (3, 0):
+            length = -1
         return self.fid.read(length)
 
     def readline(self):
@@ -60,7 +63,7 @@ class AzureBlobReadableFile(object):
         return self.fid.readlines()
 
     def seek(self, loc, whence=0):
-        return self.fid.seek(loc, whence)
+        self.fid.seek(loc, whence)
 
     def close(self):
         if self.fid is not None:
@@ -106,11 +109,12 @@ class AzureBlobFileSystem(object):
         account_key = account_key or os.environ.get("AZURE_BLOB_ACCOUNT_KEY")
         sas_token = sas_token or os.environ.get("AZURE_BLOB_SAS_TOKEN")
         connection_string = connection_string or os.environ.get("AZURE_BLOB_CONNECTION_STRING")
+        print(account_name, account_key)
         self.connection = BlockBlobService(account_name=account_name,
                                            account_key=account_key,
                                            sas_token=sas_token,
                                            connection_string=connection_string,
-                                           protocol=storage_options.get("protocol"),
+                                           protocol=storage_options.get("protocol") or "https",
                                            endpoint_suffix=storage_options.get("endpoint_suffix"),
                                            custom_domain=storage_options.get("custom_domain"))
         self.sep = "/"
