@@ -14,9 +14,9 @@ install: docker-compose build
 jobs:
   include:
     - stage: Tests
-      script: ./drun_app pytest
+      script: tox -e py27,py36,py37
     - stage: Linting - flake8
-      script: ./drun_app make lint
+      script: ./drun_app tox -e flake
     - stage: Docs
       script: ./drun_app make docs
     - stage: packaging and Release
