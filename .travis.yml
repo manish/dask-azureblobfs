@@ -8,7 +8,7 @@ services:
 python:
   - "3.6"
   - "2.7"
-  - "3.7"
+  - "3.7-dev"
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install: docker-compose build && pip install tox
