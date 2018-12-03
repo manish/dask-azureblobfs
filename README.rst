@@ -11,6 +11,13 @@ Azure Blob Storage Backend for Dask
     :target: https://dask-azureblobfs.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
+.. image:: https://pyup.io/repos/github/manish/dask-azureblobfs/python-3-shield.svg
+     :target: https://pyup.io/repos/github/manish/dask-azureblobfs/
+     :alt: Python 3
+
+.. image:: https://pyup.io/repos/github/manish/dask-azureblobfs/shield.svg
+     :target: https://pyup.io/repos/github/manish/dask-azureblobfs/
+     :alt: Updates
 
 Features
 --------
