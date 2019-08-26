@@ -116,11 +116,11 @@
         },
         "dask": {
             "hashes": [
-                "sha256:8a2c151d5862627c71fdc725760d710b7c037ec57730f453f392b896febfd0d5",
-                "sha256:a1fa4a3b2d7ce4dd0c68db4b68dadf2c283ff54d98bd72c556fc462000449ff7"
+                "sha256:63a0f77366108cdbf9350cf368042d6f5d8c9df581b9b17781f0a603e23ead6c",
+                "sha256:fdf2acc15f0526bc36512b057027bffcefdf3bca335278c8b98ef17d22f7e646"
             ],
             "index": "pypi",
-            "version": "==1.0.0"
+            "version": "==2.3.0"
         },
         "idna": {
             "hashes": [
